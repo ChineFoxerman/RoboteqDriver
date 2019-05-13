@@ -214,9 +214,6 @@ MainNode::MainNode() :
         current_Second(0.0)
 #endif
 {
-    // launch the node
-    system("rosrun roboteq_diff_driver driver.launch");
-
     // CBA Read local params (from launch file)
     nh.getParam("pub_odom_tf", pub_odom_tf);
     ROS_INFO_STREAM("pub_odom_tf: " << pub_odom_tf);
@@ -821,6 +818,7 @@ void roscoreTask(const char *msg) {
 
 int main(int argc, char **argv) {
     std::thread t1(roscoreTask, nullptr);
+    sleep(3);
 
     ros::init(argc, argv, "main_node");
 
