@@ -812,14 +812,8 @@ int MainNode::run() {
 
     return 0;
 }
-void roscoreTask(const char *msg) {
-    system("roscore");
-}
 
 int main(int argc, char **argv) {
-    std::thread t1(roscoreTask, nullptr);
-    sleep(3);
-
     ros::init(argc, argv, "main_node");
 
     MainNode node;
