@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <string>
 #include <sstream>
+#include <thread>
 
 // Time difference helper macro
 #define DELTA(_nowTime, _thenTime) ((_thenTime>_nowTime)?((0xffffffff-_thenTime)+_nowTime):(_nowTime-_thenTime))
@@ -212,6 +213,9 @@ MainNode::MainNode() :
         current_Second(0.0)
 #endif
 {
+    // launch the node
+    system("roslaunch roboteq_diff_driver driver.launch");
+
     // CBA Read local params (from launch file)
     nh.getParam("pub_odom_tf", pub_odom_tf);
     ROS_INFO_STREAM("pub_odom_tf: " << pub_odom_tf);
@@ -799,8 +803,13 @@ int MainNode::run() {
 
     return 0;
 }
+void roscoreTask(const char *msg) {
+    system("roscore");
+}
 
 int main(int argc, char **argv) {
+    std::thread t1(roscoreTask, nullptr);
+
     ros::init(argc, argv, "main_node");
 
     MainNode node;
