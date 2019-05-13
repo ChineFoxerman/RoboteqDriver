@@ -443,13 +443,13 @@ void MainNode::odom_setup() {
 
 #ifdef _ODOM_SENSORS
     ROS_INFO("Publishing to topic roboteq/voltage");
-    voltage_pub = nh.advertise<std_msgs::Float32>("roboteq/voltage", 1000);
+    voltage_pub = nh.advertise<std_msgs::Float32>("/roboteq/voltage", 1000);
     ROS_INFO("Publishing to topic roboteq/current");
-    current_pub = nh.advertise<roboteq_diff_msgs::Duplex>("roboteq/current", 1000);
+    current_pub = nh.advertise<roboteq_diff_msgs::Duplex>("/roboteq/current", 1000);
     ROS_INFO("Publishing to topic roboteq/energy");
-    energy_pub = nh.advertise<std_msgs::Float32>("roboteq/energy", 1000);
+    energy_pub = nh.advertise<std_msgs::Float32>("/roboteq/energy", 1000);
     ROS_INFO("Publishing to topic roboteq/temperature");
-    temperature_pub = nh.advertise<std_msgs::Float32>("roboteq/temperature", 1000);
+    temperature_pub = nh.advertise<std_msgs::Float32>("/roboteq/temperature", 1000);
 #endif
 
     tf_msg.header.seq = 0;
@@ -555,15 +555,15 @@ void MainNode::odom_loop2() {
         // Roboteq J & S
 
         // CR : encoder counts
-        jockeyAndSecWheelController.GetValue(_CR, 0, odom_encoder_Second);
-        jockeyAndSecWheelController.GetValue(_CR, 1, odom_encoder_Jockey);
+        jockeyAndSecWheelController.GetValue(_CR, 1, odom_encoder_Second);
+        jockeyAndSecWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
 #ifdef _ODOM_DEBUG
         ROS_DEBUG_STREAM("encoder Jockey: " << odom_encoder_Jockey << " Second: " << odom_encoder_Second);
 #endif
 
         // V : voltage
         int volt;
-        jockeyAndSecWheelController.GetValue(_V, 0, volt);
+        jockeyAndSecWheelController.GetValue(_V, 1, volt);
         jockeyAndSecWheelVoltage = volt / 10.0;
 #ifdef _ODOM_DEBUG
         ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
@@ -571,8 +571,8 @@ void MainNode::odom_loop2() {
 
         // P : PWM
         int pwmSecond, pwmJockey;
-        jockeyAndSecWheelController.GetValue(_P, 0, pwmSecond);
-        jockeyAndSecWheelController.GetValue(_P, 1, pwmJockey);
+        jockeyAndSecWheelController.GetValue(_P, 1, pwmSecond);
+        jockeyAndSecWheelController.GetValue(_P, 2, pwmJockey);
         PWM_Second = pwmSecond / 10.0;
         PWM_Jockey = pwmJockey / 10.0;
 #ifdef _ODOM_DEBUG
@@ -581,8 +581,8 @@ void MainNode::odom_loop2() {
 #endif
 
         // S : RPM
-        jockeyAndSecWheelController.GetValue(_S, 0, RPM_Second);
-        jockeyAndSecWheelController.GetValue(_S, 1, RPM_Jockey);
+        jockeyAndSecWheelController.GetValue(_S, 1, RPM_Second);
+        jockeyAndSecWheelController.GetValue(_S, 2, RPM_Jockey);
 #ifdef _ODOM_DEBUG
         ROS_DEBUG_STREAM("RPM Second: " << RPM_Second);
         ROS_DEBUG_STREAM("RPM Jockey: " << RPM_Jockey);
@@ -590,8 +590,8 @@ void MainNode::odom_loop2() {
 
         // BA : motor currents
         int currentSecond, currentJockey;
-        jockeyAndSecWheelController.GetValue(_BA, 0, currentSecond);
-        jockeyAndSecWheelController.GetValue(_BA, 1, currentJockey);
+        jockeyAndSecWheelController.GetValue(_BA, 1, currentSecond);
+        jockeyAndSecWheelController.GetValue(_BA, 2, currentJockey);
         current_Second = currentSecond / 10.0;
         current_Jockey = currentJockey / 10.0;
 #ifdef _ODOM_DEBUG
