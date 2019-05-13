@@ -11,7 +11,7 @@
     <!-- specify base frame -->
     <param name="base_frame" value="base_link" type="str"/>
     <!-- specify cmd_vel topic -->
-    <param name="cmdvel_topic" value="tender_bot/cmd_vel" type="str"/>
+    <param name="cmdvel_topic" value="/tender_bot/cmd_vel" type="str"/>
     <!-- specify port for roboteq main wheels controller -->
     <param name="port" value="/dev/TenderWheels" type="str"/>
     <!-- specify baud for roboteq main wheels controller -->
