@@ -280,16 +280,16 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     // Roboteq Tender Wheels
     if (open_loop) {
         // motor power (scale 0-1000)
-        auto right_power = (int32_t) (right_speed / wheel_circumference * 60.0 / 82.0 * 1000.0);
-        auto left_power = (int32_t) (left_speed / wheel_circumference * 60.0 / 82.0 * 1000.0);
+        int32_t right_power = right_speed / wheel_circumference * 60.0 / 82.0 * 1000.0;
+        int32_t left_power = left_speed / wheel_circumference * 60.0 / 82.0 * 1000.0;
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power right: " << right_power << " left: " << left_power);
 #endif
         mainWheelController.SetCommand(_G, 1, right_power);
         mainWheelController.SetCommand(_G, 2, left_power);
     } else {
-        auto right_rpm = (int32_t) (right_speed / wheel_circumference * 60.0);
-        auto left_rpm = (int32_t) (left_speed / wheel_circumference * 60.0);
+        int32_t right_rpm = right_speed / wheel_circumference * 60.0;
+        int32_t left_rpm = left_speed / wheel_circumference * 60.0;
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
 #endif
@@ -299,8 +299,8 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     }
 // Roboteq J & S
     if (open_loop2) {
-        auto Jockey_power = (int32_t) (Jockey_speed * 10);
-        auto Second_power = (int32_t) (Second_speed * 20);
+       int32_t Jockey_power = Jockey_speed * 10;
+       int32_t Second_power = Second_speed * 20;
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
