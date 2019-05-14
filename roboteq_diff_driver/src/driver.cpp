@@ -293,6 +293,7 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
 #endif
+        ROS_INFO_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
         mainWheelController.SetCommand(_S, 1, right_rpm);
         mainWheelController.SetCommand(_S, 2, left_rpm);
     }
@@ -303,6 +304,7 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
+        ROS_INFO_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
         jockeyAndSecWheelController.SetCommand(_G, 1, Second_power);
         jockeyAndSecWheelController.SetCommand(_G, 2, Jockey_power);
     } else {
