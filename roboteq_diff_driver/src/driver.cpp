@@ -266,11 +266,13 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     ROS_DEBUG_STREAM("callback of topic : " + cmdvel_sub.getTopic() + " start");
 #endif
     // wheel speed (m/s)
-    float right_speed = (-twist_msg.angular.z + track_width * twist_msg.linear.x / 2.0);
-    float left_speed = (-twist_msg.angular.z - track_width * twist_msg.linear.x / 2.0);
+    float right_speed = (- twist_msg.angular.z + track_width * twist_msg.linear.x / 2.0);
+    float left_speed = (- twist_msg.angular.z - track_width * twist_msg.linear.x / 2.0);
+    ROS_INFO_STREAM("twist msg angular z: " << twist_msg.angular.z);
+
     //Jockey and second speed (pwm)
     float Jockey_speed = twist_msg.linear.z;
-    float Second_speed = twist_msg.linear.y;
+    float Second_speed = twist_msg.angular.y;
 
 #ifdef _CMDVEL_DEBUG
     ROS_DEBUG_STREAM("cmdvel speed right: " << right_speed << " left: " << left_speed);
@@ -293,7 +295,6 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
 #endif
-        ROS_INFO_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
         mainWheelController.SetCommand(_S, 1, right_rpm);
         mainWheelController.SetCommand(_S, 2, left_rpm);
     }
