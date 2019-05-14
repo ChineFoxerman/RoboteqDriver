@@ -308,8 +308,6 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     } else {
 
     }
-
-    ROS_INFO_STREAM("callback end");
 }
 
 void MainNode::cmdvel_setup() {
@@ -489,8 +487,6 @@ void MainNode::odom_setup() {
 }
 
 void MainNode::odom_loop() {
-    ROS_INFO_STREAM("enter odom loop1");
-
     // read sensor data stream from motor controller
     // Roboteq Tender Wheels
     if (mainWheelController.IsConnected()) {
@@ -540,15 +536,12 @@ void MainNode::odom_loop() {
         ROS_DEBUG_STREAM("Current right: " << current_right);
         ROS_DEBUG_STREAM("Current left: " << current_left);
 #endif
-        ROS_INFO_STREAM("end odom loop1");
     } else {
         mainWheelController.Connect(port);
     }
 }
 
 void MainNode::odom_loop2() {
-    ROS_INFO_STREAM("enter odom loop2");
-
     // read sensor data stream from motor controller
     // Roboteq Tender Wheels
     if (jockeyAndSecWheelController.IsConnected()) {
@@ -598,7 +591,6 @@ void MainNode::odom_loop2() {
         ROS_DEBUG_STREAM("Current Second: " << current_Second);
         ROS_DEBUG_STREAM("Current Jockey: " << current_Jockey);
 #endif
-        ROS_INFO_STREAM("end odom loop2");
     } else {
         jockeyAndSecWheelController.Connect(port2);
     }
