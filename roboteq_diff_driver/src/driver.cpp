@@ -299,7 +299,7 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 // Roboteq J & S
     if (open_loop2) {
         auto Jockey_power = (int32_t) (Jockey_speed * 10);
-        auto Second_power = (int32_t) (Second_speed * 10);
+        auto Second_power = (int32_t) (Second_speed * 20);
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
@@ -358,19 +358,19 @@ void MainNode::cmdvel_setup() {
     // set max speed (rpm) for relative speed commands
     mainWheelController.SetConfig(_MXRPM, 1, 3350);
     mainWheelController.SetConfig(_MXRPM, 2, 3350);
-    jockeyAndSecWheelController.SetConfig(_MXRPM, 1, 100);
+    jockeyAndSecWheelController.SetConfig(_MXRPM, 1, 3350);
     jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 100);
 
     // set max acceleration rate (200 rpm/s * 10)
     mainWheelController.SetConfig(_MAC, 1, 20000);
     mainWheelController.SetConfig(_MAC, 2, 20000);
-    jockeyAndSecWheelController.SetConfig(_MAC, 1, 2000);
+    jockeyAndSecWheelController.SetConfig(_MAC, 1, 20000);
     jockeyAndSecWheelController.SetConfig(_MAC, 2, 2000);
 
     // set max deceleration rate (2000 rpm/s * 10)
     mainWheelController.SetConfig(_MDEC, 1, 20000);
     mainWheelController.SetConfig(_MDEC, 2, 20000);
-    jockeyAndSecWheelController.SetConfig(_MDEC, 1, 2000);
+    jockeyAndSecWheelController.SetConfig(_MDEC, 1, 20000);
     jockeyAndSecWheelController.SetConfig(_MDEC, 2, 2000);
 
     // set PID parameters (gain * 10)
