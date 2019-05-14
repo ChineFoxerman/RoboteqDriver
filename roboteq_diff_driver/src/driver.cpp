@@ -268,7 +268,6 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     // wheel speed (m/s)
     float right_speed = (- twist_msg.angular.z + track_width * twist_msg.linear.x / 2.0);
     float left_speed = (- twist_msg.angular.z - track_width * twist_msg.linear.x / 2.0);
-    ROS_INFO_STREAM("twist msg angular z: " << twist_msg.angular.z);
 
     //Jockey and second speed (pwm)
     float Jockey_speed = twist_msg.linear.z;
@@ -305,7 +304,6 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
-        ROS_INFO_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
         jockeyAndSecWheelController.SetCommand(_G, 1, Second_power);
         jockeyAndSecWheelController.SetCommand(_G, 2, Jockey_power);
     } else {
