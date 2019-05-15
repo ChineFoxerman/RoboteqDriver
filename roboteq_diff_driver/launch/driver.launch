@@ -3,12 +3,6 @@
   <!-- publishes odom topic with base_link frame -->
   <!-- broadcasts odom->base_link transform -->
   <node pkg="roboteq_diff_driver" type="driver" name="roboteq_diff_driver" output="screen">
-    <!-- enable broadcast of odom tf -->
-    <param name="pub_odom_tf" value="true" />
-    <!-- specify odom frame -->
-    <param name="odom_frame" value="odom" type="str"/>
-    <!-- specify base frame -->
-    <param name="base_frame" value="base_link" type="str"/>
     <!-- specify cmd_vel topic -->
     <param name="cmdvel_topic" value="/tender_bot/cmd_vel" type="str"/>
     <!-- specify odom topic -->
@@ -26,7 +20,7 @@
     <!-- specify counts-per-revolution for motor encoders (ppr*4 for quadrature encoders)  -->
     <param name="encoder_cpr" value="4000" />
     <!-- specify port for roboteq jockey wheel controller -->
-    <param name="port2" value="/dev/TenderJockey" type="str"/>
+    <!-- param name="port2" value="/dev/TenderJockey" type="str"/ -->
     <!-- specify whether to use open-loop motor speed control (as opposed to closed-loop)-->
     <param name="open_loop2" value="true" />
     <!-- specify pulse-per-revolution for motor encoders  -->

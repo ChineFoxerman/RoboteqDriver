@@ -16,18 +16,11 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 
-//
-// odom publisher
-//
-
 // Define following to enable odom debug output
 #define _ODOM_DEBUG
 
 // Define following to publish additional sensor information
 #define _ODOM_SENSORS
-
-// Define following to enable service for returning covariance
-//#define _ODOM_COVAR_SERVER
 
 #define NORMALIZE(_z) atan2(sin(_z), cos(_z))
 
@@ -42,10 +35,6 @@
 #include <std_msgs/Float32.h>
 #include <roboteq_diff_msgs/Duplex.h>
 
-#endif
-#ifdef _ODOM_COVAR_SERVER
-#include "roboteq_diff_msgs/OdometryCovariances.h"
-#include "rogoteq_diff_msgs/RequestOdometryCovariances.h"
 #endif
 
 #include "RoboteqDevice.h"
@@ -63,7 +52,6 @@ static uint32_t millis() {
 //	return (uint32_t)(wallTime.toNSec()/1000000.0+0.5);
     return (uint32_t) (wallTime.toNSec() / 1000000);
 }
-
 class MainNode {
 
 public:
@@ -87,11 +75,6 @@ public:
     void odom_hs_run();
     void odom_ms_run();
     void odom_ls_run();
-    void odom_publish();
-
-#ifdef _ODOM_COVAR_SERVER
-    void odom_covar_callback(const roboteq_diff_msgs::RequestOdometryCovariancesRequest& req, roboteq_diff_msgs::RequestOdometryCovariancesResponse& res);
-#endif
 
     int run();
 
@@ -111,14 +94,6 @@ protected:
     //
     ros::Subscriber cmdvel_sub;
 
-    //
-    // odom publisher
-    //
-    geometry_msgs::TransformStamped tf_msg;
-    tf::TransformBroadcaster odom_broadcaster;
-    nav_msgs::Odometry odom_msg;
-    ros::Publisher odom_pub;
-
 #ifdef _ODOM_SENSORS
     std_msgs::Float32 voltage_msg;
     ros::Publisher voltage_pub;
@@ -135,15 +110,6 @@ protected:
     int32_t odom_encoder_right{};
     int32_t odom_encoder_Jockey{};
     int32_t odom_encoder_Second{};
-
-    float odom_x{};
-    float odom_y{};
-    float odom_yaw{};
-    float odom_last_x{};
-    float odom_last_y{};
-    float odom_last_yaw{};
-
-    uint32_t odom_last_time{};
 
 #ifdef _ODOM_SENSORS
     // Roboteq Tender Wheels (deux roues)
@@ -168,11 +134,7 @@ protected:
 #endif
 
     // General settings
-    bool pub_odom_tf;
-    std::string odom_frame;
-    std::string base_frame;
     std::string cmdvel_topic;
-    std::string odom_topic;
 
     // settings  Roboteq Tender Wheels
     std::string port;
@@ -215,16 +177,8 @@ MainNode::MainNode() :
 #endif
 {
     // CBA Read local params (from launch file)
-    nh.getParam("pub_odom_tf", pub_odom_tf);
-    ROS_INFO_STREAM("pub_odom_tf: " << pub_odom_tf);
-    nh.getParam("odom_frame", odom_frame);
-    ROS_INFO_STREAM("odom_frame: " << odom_frame);
-    nh.getParam("base_frame", base_frame);
-    ROS_INFO_STREAM("base_frame: " << base_frame);
     nh.getParam("cmdvel_topic", cmdvel_topic);
     ROS_INFO_STREAM("cmdvel_topic: " << cmdvel_topic);
-    nh.getParam("odom_topic", odom_topic);
-    ROS_INFO_STREAM("odom_topic: " << odom_topic);
     nh.getParam("port", port);
     ROS_INFO_STREAM("port: " << port);
     nh.getParam("open_loop", open_loop);
@@ -399,43 +353,7 @@ void MainNode::cmdvel_setup() {
     cmdvel_sub = nh.subscribe(cmdvel_topic, 1000, &MainNode::cmdvel_callback, this);
 }
 
-//
-// odom publisher
-//
-
-#ifdef _ODOM_COVAR_SERVER
-void MainNode::odom_covar_callback(const roboteq_diff_msgs::RequestOdometryCovariancesRequest& req, roboteq_diff_msgs::RequestOdometryCovariancesResponse& res)
-{
-  res.odometry_covariances.pose.pose.covariance[0] = 0.001;
-  res.odometry_covariances.pose.pose.covariance[7] = 0.001;
-  res.odometry_covariances.pose.pose.covariance[14] = 1000000;
-  res.odometry_covariances.pose.pose.covariance[21] = 1000000;
-  res.odometry_covariances.pose.pose.covariance[28] = 1000000;
-  res.odometry_covariances.pose.pose.covariance[35] = 1000;
-
-  res.odometry_covariances.twist.twist.covariance[0] = 0.001;
-  res.odometry_covariances.twist.twist.covariance[7] = 0.001;
-  res.odometry_covariances.twist.twist.covariance[14] = 1000000;
-  res.odometry_covariances.twist.twist.covariance[21] = 1000000;
-  res.odometry_covariances.twist.twist.covariance[28] = 1000000;
-  res.odometry_covariances.twist.twist.covariance[35] = 1000;
-}
-#endif
-
 void MainNode::odom_setup() {
-
-    if (pub_odom_tf) {
-        ROS_INFO("Broadcasting odom tf");
-    }
-
-    ROS_INFO_STREAM("Publishing to topic " << odom_topic);
-    odom_pub = nh.advertise<nav_msgs::Odometry>(odom_topic, 1000);
-
-#ifdef _ODOM_COVAR_SERVER
-    ROS_INFO("Advertising service on roboteq/odom_covar_srv");
-    odom_covar_server = nh.advertiseService("roboteq/odom_covar_srv", &MainNode::odom_covar_callback, this);
-#endif
-
 #ifdef _ODOM_SENSORS
     ROS_INFO("Publishing to topic roboteq/voltage");
     voltage_pub = nh.advertise<std_msgs::Float32>("/roboteq/voltage", 1000);
@@ -446,30 +364,6 @@ void MainNode::odom_setup() {
     ROS_INFO("Publishing to topic roboteq/temperature");
     temperature_pub = nh.advertise<std_msgs::Float32>("/roboteq/temperature", 1000);
 #endif
-
-    tf_msg.header.seq = 0;
-    tf_msg.header.frame_id = odom_frame;
-    tf_msg.child_frame_id = base_frame;
-
-    odom_msg.header.seq = 0;
-    odom_msg.header.frame_id = odom_frame;
-    odom_msg.child_frame_id = base_frame;
-
-    odom_msg.pose.covariance.assign(0);
-    odom_msg.pose.covariance[0] = 0.001;
-    odom_msg.pose.covariance[7] = 0.001;
-    odom_msg.pose.covariance[14] = 1000000;
-    odom_msg.pose.covariance[21] = 1000000;
-    odom_msg.pose.covariance[28] = 1000000;
-    odom_msg.pose.covariance[35] = 1000;
-
-    odom_msg.twist.covariance.assign(0);
-    odom_msg.twist.covariance[0] = 0.001;
-    odom_msg.twist.covariance[7] = 0.001;
-    odom_msg.twist.covariance[14] = 1000000;
-    odom_msg.twist.covariance[21] = 1000000;
-    odom_msg.twist.covariance[28] = 1000000;
-    odom_msg.twist.covariance[35] = 1000;
 
 #ifdef _ODOM_SENSORS
 //  voltage_msg.header.seq = 0;
@@ -486,111 +380,99 @@ void MainNode::odom_setup() {
 void MainNode::odom_loop() {
     // read sensor data stream from motor controller
     // Roboteq Tender Wheels
-    if (mainWheelController.IsConnected()) {
-        // Roboteq J & S
-
-        // CR : encoder counts
-        mainWheelController.GetValue(_CR, 1, odom_encoder_Second);
-        mainWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
+    // CR : encoder counts
+    mainWheelController.GetValue(_CR, 1, odom_encoder_Second);
+    mainWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("encoder right: " << odom_encoder_right << " left: " << odom_encoder_left);
+    ROS_DEBUG_STREAM("encoder right: " << odom_encoder_right << " left: " << odom_encoder_left);
 #endif
 
-        // V : voltage
-        int volt;
-        mainWheelController.GetValue(_V, 1, volt);
-        voltage = volt / 10.0;
+    // V : voltage
+    int volt;
+    mainWheelController.GetValue(_V, 1, volt);
+    voltage = volt / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("V: " << voltage);
+    ROS_DEBUG_STREAM("V: " << voltage);
 #endif
 
-        // P : PWM
-        int pwmRight, pwmLeft;
-        mainWheelController.GetValue(_P, 1, pwmRight);
-        mainWheelController.GetValue(_P, 2, pwmLeft);
-        PWM_right = pwmRight / 10.0;
-        PWM_left = pwmLeft / 10.0;
+    // P : PWM
+    int pwmRight, pwmLeft;
+    mainWheelController.GetValue(_P, 1, pwmRight);
+    mainWheelController.GetValue(_P, 2, pwmLeft);
+    PWM_right = pwmRight / 10.0;
+    PWM_left = pwmLeft / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("PWM right: " << PWM_right);
-        ROS_DEBUG_STREAM("PWM left: " << PWM_left);
+    ROS_DEBUG_STREAM("PWM right: " << PWM_right);
+    ROS_DEBUG_STREAM("PWM left: " << PWM_left);
 #endif
-
-        // S : RPM
-        mainWheelController.GetValue(_S, 1, RPM_right);
-        mainWheelController.GetValue(_S, 2, RPM_left);
+    
+    // S : RPM
+    mainWheelController.GetValue(_S, 1, RPM_right);
+    mainWheelController.GetValue(_S, 2, RPM_left);
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("RPM right: " << RPM_right);
-        ROS_DEBUG_STREAM("RPM letf: " << RPM_left);
+    ROS_DEBUG_STREAM("RPM right: " << RPM_right);
+    ROS_DEBUG_STREAM("RPM letf: " << RPM_left);
 #endif
-
-        // BA : motor currents
-        int currentRight, currentLeft;
-        mainWheelController.GetValue(_BA, 1, currentRight);
-        mainWheelController.GetValue(_BA, 2, currentLeft);
-        current_right = currentRight / 10.0;
-        current_left = currentLeft / 10.0;
+    
+    // BA : motor currents
+    int currentRight, currentLeft;
+    mainWheelController.GetValue(_BA, 1, currentRight);
+    mainWheelController.GetValue(_BA, 2, currentLeft);
+    current_right = currentRight / 10.0;
+    current_left = currentLeft / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("Current right: " << current_right);
-        ROS_DEBUG_STREAM("Current left: " << current_left);
+    ROS_DEBUG_STREAM("Current right: " << current_right);
+    ROS_DEBUG_STREAM("Current left: " << current_left);
 #endif
-    } else {
-        mainWheelController.Connect(port);
-    }
 }
 
 void MainNode::odom_loop2() {
     // read sensor data stream from motor controller
-    // Roboteq Tender Wheels
-    if (jockeyAndSecWheelController.IsConnected()) {
-        // Roboteq J & S
-
-        // CR : encoder counts
-        jockeyAndSecWheelController.GetValue(_CR, 1, odom_encoder_Second);
-        jockeyAndSecWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
+    // Roboteq J & S
+    // CR : encoder counts
+    jockeyAndSecWheelController.GetValue(_CR, 1, odom_encoder_Second);
+    jockeyAndSecWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("encoder Jockey: " << odom_encoder_Jockey << " Second: " << odom_encoder_Second);
+    ROS_DEBUG_STREAM("encoder Jockey: " << odom_encoder_Jockey << " Second: " << odom_encoder_Second);
 #endif
 
-        // V : voltage
-        int volt;
-        jockeyAndSecWheelController.GetValue(_V, 1, volt);
-        jockeyAndSecWheelVoltage = volt / 10.0;
+    // V : voltage
+    int volt;
+    jockeyAndSecWheelController.GetValue(_V, 1, volt);
+    jockeyAndSecWheelVoltage = volt / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
+    ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
 #endif
 
-        // P : PWM
-        int pwmSecond, pwmJockey;
-        jockeyAndSecWheelController.GetValue(_P, 1, pwmSecond);
-        jockeyAndSecWheelController.GetValue(_P, 2, pwmJockey);
-        PWM_Second = pwmSecond / 10.0;
-        PWM_Jockey = pwmJockey / 10.0;
+    // P : PWM
+    int pwmSecond, pwmJockey;
+    jockeyAndSecWheelController.GetValue(_P, 1, pwmSecond);
+    jockeyAndSecWheelController.GetValue(_P, 2, pwmJockey);
+    PWM_Second = pwmSecond / 10.0;
+    PWM_Jockey = pwmJockey / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("PWM Second: " << PWM_Second);
-        ROS_DEBUG_STREAM("PWM Jockey: " << PWM_Jockey);
+    ROS_DEBUG_STREAM("PWM Second: " << PWM_Second);
+    ROS_DEBUG_STREAM("PWM Jockey: " << PWM_Jockey);
 #endif
 
-        // S : RPM
-        jockeyAndSecWheelController.GetValue(_S, 1, RPM_Second);
-        jockeyAndSecWheelController.GetValue(_S, 2, RPM_Jockey);
+    // S : RPM
+    jockeyAndSecWheelController.GetValue(_S, 1, RPM_Second);
+    jockeyAndSecWheelController.GetValue(_S, 2, RPM_Jockey);
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("RPM Second: " << RPM_Second);
-        ROS_DEBUG_STREAM("RPM Jockey: " << RPM_Jockey);
+    ROS_DEBUG_STREAM("RPM Second: " << RPM_Second);
+    ROS_DEBUG_STREAM("RPM Jockey: " << RPM_Jockey);
 #endif
 
-        // BA : motor currents
-        int currentSecond, currentJockey;
-        jockeyAndSecWheelController.GetValue(_BA, 1, currentSecond);
-        jockeyAndSecWheelController.GetValue(_BA, 2, currentJockey);
-        current_Second = currentSecond / 10.0;
-        current_Jockey = currentJockey / 10.0;
+    // BA : motor currents
+    int currentSecond, currentJockey;
+    jockeyAndSecWheelController.GetValue(_BA, 1, currentSecond);
+    jockeyAndSecWheelController.GetValue(_BA, 2, currentJockey);
+    current_Second = currentSecond / 10.0;
+    current_Jockey = currentJockey / 10.0;
 #ifdef _ODOM_DEBUG
-        ROS_DEBUG_STREAM("Current Second: " << current_Second);
-        ROS_DEBUG_STREAM("Current Jockey: " << current_Jockey);
+    ROS_DEBUG_STREAM("Current Second: " << current_Second);
+    ROS_DEBUG_STREAM("Current Jockey: " << current_Jockey);
 #endif
-    } else {
-        jockeyAndSecWheelController.Connect(port2);
-    }
 }
 
 void MainNode::odom_hs_run() {
@@ -609,7 +491,6 @@ void MainNode::odom_ms_run() {
 }
 
 void MainNode::odom_ls_run() {
-
 #ifdef _ODOM_SENSORS
 //  voltage_msg.header.seq++;
 //  voltage_msg.header.stamp = ros::Time::now();
@@ -624,102 +505,7 @@ void MainNode::odom_ls_run() {
     temperature_msg.data = temperature;
     temperature_pub.publish(temperature_msg);
 #endif
-
 }
-
-void MainNode::odom_publish() {
-
-    // determine delta time in seconds
-    uint32_t nowTime = millis();
-    float dt = (float) DELTA(nowTime, odom_last_time) / 1000.0;
-    odom_last_time = nowTime;
-
-#ifdef _ODOM_DEBUG
-/*
-ROS_DEBUG("right: ");
-ROS_DEBUG(odom_encoder_right);
-ROS_DEBUG(" left: ");
-ROS_DEBUG(odom_encoder_left);
-ROS_DEBUG(" dt: ");
-ROS_DEBUG(dt);
-ROS_DEBUG("");
-*/
-#endif
-
-    // determine deltas of distance and angle
-    float linear = ((float) odom_encoder_right / (float) encoder_cpr * wheel_circumference +
-                    (float) odom_encoder_left / (float) encoder_cpr * wheel_circumference) / 2.0;
-//  float angular = ((float)odom_encoder_right / (float)encoder_cpr * wheel_circumference - (float)odom_encoder_left / (float)encoder_cpr * wheel_circumference) / track_width * -1.0;
-    float angular = ((float) odom_encoder_right / (float) encoder_cpr * wheel_circumference -
-                     (float) odom_encoder_left / (float) encoder_cpr * wheel_circumference) / track_width;
-#ifdef _ODOM_DEBUG
-/*
-ROS_DEBUG("linear: ");
-ROS_DEBUG(linear);
-ROS_DEBUG(" angular: ");
-ROS_DEBUG(angular);
-ROS_DEBUG("");
-*/
-#endif
-
-    // Update odometry
-    odom_x += linear * cos((double) odom_yaw);        // m
-    odom_y += linear * sin((double) odom_yaw);        // m
-    odom_yaw = NORMALIZE((double) odom_yaw + angular);  // rad
-#ifdef _ODOM_DEBUG
-//ROS_DEBUG_STREAM( "odom x: " << odom_x << " y: " << odom_y << " yaw: " << odom_yaw );
-#endif
-
-    // Calculate velocities
-    float vx = (odom_x - odom_last_x) / dt;
-    float vy = (odom_y - odom_last_y) / dt;
-    float vyaw = (odom_yaw - odom_last_yaw) / dt;
-#ifdef _ODOM_DEBUG
-//ROS_DEBUG_STREAM( "velocity vx: " << odom_x << " vy: " << odom_y << " vyaw: " << odom_yaw );
-#endif
-    odom_last_x = odom_x;
-    odom_last_y = odom_y;
-    odom_last_yaw = odom_yaw;
-#ifdef _ODOM_DEBUG
-/*
-ROS_DEBUG("vx: ");
-ROS_DEBUG(vx);
-ROS_DEBUG(" vy: ");
-ROS_DEBUG(vy);
-ROS_DEBUG(" vyaw: ");
-ROS_DEBUG(vyaw);
-ROS_DEBUG("");
-*/
-#endif
-
-    geometry_msgs::Quaternion quat = tf::createQuaternionMsgFromYaw(odom_yaw);
-
-    if (pub_odom_tf) {
-        tf_msg.header.seq++;
-        tf_msg.header.stamp = ros::Time::now();
-        tf_msg.transform.translation.x = odom_x;
-        tf_msg.transform.translation.y = odom_y;
-        tf_msg.transform.translation.z = 0.0;
-        tf_msg.transform.rotation = quat;
-        odom_broadcaster.sendTransform(tf_msg);
-    }
-
-    odom_msg.header.seq++;
-    odom_msg.header.stamp = ros::Time::now();
-    odom_msg.pose.pose.position.x = odom_x;
-    odom_msg.pose.pose.position.y = odom_y;
-    odom_msg.pose.pose.position.z = 0.0;
-    odom_msg.pose.pose.orientation = quat;
-    odom_msg.twist.twist.linear.x = vx;
-    odom_msg.twist.twist.linear.y = vy;
-    odom_msg.twist.twist.linear.z = 0.0;
-    odom_msg.twist.twist.angular.x = 0.0;
-    odom_msg.twist.twist.angular.y = 0.0;
-    odom_msg.twist.twist.angular.z = vyaw;
-    odom_pub.publish(odom_msg);
-
-}
-
 
 int MainNode::run() {
 
@@ -748,7 +534,7 @@ int MainNode::run() {
             }
         }
 
-        if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
+        if (mainWheelController.IsConnected() /*&& jockeyAndSecWheelController.IsConnected()*/) {
             break;
         }
 
@@ -768,8 +554,18 @@ int MainNode::run() {
     ROS_INFO("Beginning looping...");
 
     while (ros::ok()) {
-        odom_loop();
-        odom_loop2();
+        if (mainWheelController.IsConnected()) {
+	    odom_loop();
+	} else if (port != "") {
+	    mainWheelController.Connect(port);
+	}
+
+	if (jockeyAndSecWheelController.IsConnected()) {
+	    odom_loop2();
+	} else if (port2 != "") {
+            jockeyAndSecWheelController.Connect(port2);
+	}
+        
         uint32_t nowTime = millis();
 
         // Handle 30 Hz publishing
