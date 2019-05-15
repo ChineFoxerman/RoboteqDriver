@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>roboteq_driver_ros</name>
+  <version>0.1.0</version>
+  <description>The roboteq_driver_ros package</description>
+  <author>ZHANG Jingwei</author>
+  <maintainer email="jingwei.zhang@eptender.com">ZHANG Jingwei</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>topic_tools</build_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>topic_tools</run_depend>
+</package>

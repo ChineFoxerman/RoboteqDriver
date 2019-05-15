@@ -13,8 +13,6 @@
 #define _CMDVEL_DEBUG
 
 #include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
 
 // Define following to enable odom debug output
 #define _ODOM_DEBUG
@@ -27,7 +25,7 @@
 #ifdef _ODOM_SENSORS
 
 #include <std_msgs/Float32.h>
-#include <roboteq_diff_msgs/Duplex.h>
+#include <std_msgs/Float32MultiArray.h>
 
 #endif
 
@@ -89,7 +87,7 @@ protected:
 #ifdef _ODOM_SENSORS
     std_msgs::Float32 voltage_msg;
     ros::Publisher voltage_pub;
-    roboteq_diff_msgs::Duplex current_msg;
+    std_msgs::Float32MultiArray current_msg;
     ros::Publisher current_pub;
     std_msgs::Float32 energy_msg;
     ros::Publisher energy_pub;
@@ -350,22 +348,11 @@ void MainNode::odom_setup() {
     ROS_INFO("Publishing to topic roboteq/voltage");
     voltage_pub = nh.advertise<std_msgs::Float32>("/roboteq/voltage", 1000);
     ROS_INFO("Publishing to topic roboteq/current");
-    current_pub = nh.advertise<roboteq_diff_msgs::Duplex>("/roboteq/current", 1000);
+    current_pub = nh.advertise<std_msgs::Float32>("/roboteq/current", 1000);
     ROS_INFO("Publishing to topic roboteq/energy");
     energy_pub = nh.advertise<std_msgs::Float32>("/roboteq/energy", 1000);
     ROS_INFO("Publishing to topic roboteq/temperature");
     temperature_pub = nh.advertise<std_msgs::Float32>("/roboteq/temperature", 1000);
-#endif
-
-#ifdef _ODOM_SENSORS
-//  voltage_msg.header.seq = 0;
-//  voltage_msg.header.frame_id = 0;
-//  current_msg.header.seq = 0;
-//  current_msg.header.frame_id = 0;
-//  energy_msg.header.seq = 0;
-//  energy_msg.header.frame_id = 0;
-//  temperature_msg.header.seq = 0;
-//  temperature_msg.header.frame_id = 0;
 #endif
 }
 
@@ -473,10 +460,8 @@ void MainNode::odom_hs_run() {
 void MainNode::odom_ms_run() {
 
 #ifdef _ODOM_SENSORS
-//  current_msg.header.seq++;
-//  current_msg.header.stamp = ros::Time::now();
-    current_msg.a = current_right;
-    current_msg.b = current_left;
+    current_msg.data[0] = current_right;
+    current_msg.data[1] = current_left;
     current_pub.publish(current_msg);
 #endif
 
@@ -484,16 +469,10 @@ void MainNode::odom_ms_run() {
 
 void MainNode::odom_ls_run() {
 #ifdef _ODOM_SENSORS
-//  voltage_msg.header.seq++;
-//  voltage_msg.header.stamp = ros::Time::now();
     voltage_msg.data = voltage;
     voltage_pub.publish(voltage_msg);
-//  energy_msg.header.seq++;
-//  energy_msg.header.stamp = ros::Time::now();
     energy_msg.data = energy;
     energy_pub.publish(energy_msg);
-//  temperature_msg.header.seq++;
-//  temperature_msg.header.stamp = ros::Time::now();
     temperature_msg.data = temperature;
     temperature_pub.publish(temperature_msg);
 #endif

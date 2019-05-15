@@ -2,7 +2,7 @@
   <!-- subscribes to cmd_vel topic -->
   <!-- publishes odom topic with base_link frame -->
   <!-- broadcasts odom->base_link transform -->
-  <node pkg="roboteq_diff_driver" type="driver" name="roboteq_diff_driver" output="screen">
+  <node pkg="roboteq_driver_ros" type="driver" name="roboteq_driver_ros" output="screen">
     <!-- specify cmd_vel topic -->
     <param name="cmdvel_topic" value="/tender_bot/cmd_vel" type="str"/>
     <!-- specify odom topic -->
