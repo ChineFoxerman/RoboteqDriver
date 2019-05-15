@@ -2,7 +2,6 @@
   <!-- subscribes to cmd_vel topic -->
   <!-- publishes odom topic with base_link frame -->
   <!-- broadcasts odom->base_link transform -->
-  <arg name="param" default="value" />
   <node pkg="roboteq_diff_driver" type="driver" name="roboteq_diff_driver" output="screen">
     <!-- enable broadcast of odom tf -->
     <param name="pub_odom_tf" value="true" />
@@ -16,8 +15,6 @@
     <param name="odom_topic" value="/tender_bot/odom" type="str"/>
     <!-- specify port for roboteq main wheels controller -->
     <param name="port" value="/dev/TenderWheels" type="str"/>
-    <!-- specify baud for roboteq main wheels controller -->
-    <param name="baud" value="115200" />
     <!-- specify whether to use open-loop motor speed control (as opposed to closed-loop)-->
     <param name="open_loop" value="false" />
     <!-- specify robot wheel circumference in meters  -->
@@ -30,8 +27,6 @@
     <param name="encoder_cpr" value="4000" />
     <!-- specify port for roboteq jockey wheel controller -->
     <param name="port2" value="/dev/TenderJockey" type="str"/>
-    <!-- specify baud for roboteq jockey wheel controller -->
-    <param name="baud2" value="115200" />
     <!-- specify whether to use open-loop motor speed control (as opposed to closed-loop)-->
     <param name="open_loop2" value="true" />
     <!-- specify pulse-per-revolution for motor encoders  -->

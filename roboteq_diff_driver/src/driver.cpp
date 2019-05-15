@@ -176,7 +176,6 @@ protected:
 
     // settings  Roboteq Tender Wheels
     std::string port;
-    int baud;
     bool open_loop;
     double wheel_circumference;
     double track_width;
@@ -185,15 +184,16 @@ protected:
 
     //settings  Roboteq J & S
     std::string port2;
-    int baud2;
     bool open_loop2;
     int encoder_ppr2;
     int encoder_cpr2;
 };
 
 MainNode::MainNode() :
-#ifdef _ODOM_SENSORS
         nh("roboteq_diff_driver"),
+        port(""),
+        port2(""),
+#ifdef _ODOM_SENSORS
 // Roboteq Tender Wheels
         voltage(0.0),
         PWM_right(0.0),
@@ -227,8 +227,6 @@ MainNode::MainNode() :
     ROS_INFO_STREAM("odom_topic: " << odom_topic);
     nh.getParam("port", port);
     ROS_INFO_STREAM("port: " << port);
-    nh.getParam("baud", baud);
-    ROS_INFO_STREAM("baud: " << baud);
     nh.getParam("open_loop", open_loop);
     ROS_INFO_STREAM("open_loop: " << open_loop);
     nh.getParam("wheel_circumference", wheel_circumference);
@@ -241,8 +239,6 @@ MainNode::MainNode() :
     ROS_INFO_STREAM("encoder_cpr: " << encoder_cpr);
     nh.getParam("port2", port2);
     ROS_INFO_STREAM("port2: " << port2);
-    nh.getParam("baud2", baud2);
-    ROS_INFO_STREAM("baud2: " << baud2);
     nh.getParam("open_loop2", open_loop2);
     ROS_INFO_STREAM("open_loop2: " << open_loop2);
     nh.getParam("encoder_ppr2", encoder_ppr2);
@@ -729,24 +725,27 @@ int MainNode::run() {
 
     ROS_INFO("Beginning setup...");
 
-    // TODO: support automatic re-opening of port after disconnection
     while (ros::ok()) {
         int status;
 
-        ROS_INFO_STREAM("Opening serial port on " << port << " at " << baud << "...");
-        status = mainWheelController.Connect(port);
-        if (status == RQ_SUCCESS) {
-            ROS_INFO("Successfully connected to main wheels controller");
-        } else {
-            ROS_WARN_STREAM("Failed to connect to main wheels controller");
+        if (port != "") {
+            ROS_INFO_STREAM("Opening serial port on " << port);
+            status = mainWheelController.Connect(port);
+            if (status == RQ_SUCCESS) {
+                ROS_INFO("Successfully connected to main wheels controller");
+            } else {
+                ROS_WARN_STREAM("Failed to connect to main wheels controller");
+            }
         }
 
-        ROS_INFO_STREAM("Opening serial port2 on " << port2 << " at " << baud2 << "...");
-        status = jockeyAndSecWheelController.Connect(port2);
-        if (status == RQ_SUCCESS) {
-            ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
-        } else {
-            ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
+        if (port2 != "") {
+            ROS_INFO_STREAM("Opening serial port2 on " << port2);
+            status = jockeyAndSecWheelController.Connect(port2);
+            if (status == RQ_SUCCESS) {
+                ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
+            } else {
+                ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
+            }
         }
 
         if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
