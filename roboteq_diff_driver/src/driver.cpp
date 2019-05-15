@@ -24,12 +24,6 @@
 
 #define NORMALIZE(_z) atan2(sin(_z), cos(_z))
 
-#include <tf/tf.h>
-#include <geometry_msgs/Quaternion.h>
-#include <tf/transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <nav_msgs/Odometry.h>
-
 #ifdef _ODOM_SENSORS
 
 #include <std_msgs/Float32.h>
@@ -48,8 +42,6 @@ static void mySigintHandler(int sig) {
 
 static uint32_t millis() {
     ros::WallTime wallTime = ros::WallTime::now();
-//	return (uint32_t)((wallTime._sec*1000 + wallTime.nsec/1000000.0) + 0.5);
-//	return (uint32_t)(wallTime.toNSec()/1000000.0+0.5);
     return (uint32_t) (wallTime.toNSec() / 1000000);
 }
 class MainNode {
@@ -152,7 +144,7 @@ protected:
 };
 
 MainNode::MainNode() :
-        nh("roboteq_diff_driver"),
+        nh("~"),
         port(""),
         port2(""),
 #ifdef _ODOM_SENSORS
