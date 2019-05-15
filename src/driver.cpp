@@ -505,7 +505,7 @@ int MainNode::run() {
             }
         }
 
-        if (mainWheelController.IsConnected() /*&& jockeyAndSecWheelController.IsConnected()*/) {
+        if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
             break;
         }
 
@@ -526,16 +526,16 @@ int MainNode::run() {
 
     while (ros::ok()) {
         if (mainWheelController.IsConnected()) {
-	    odom_loop();
-	} else if (port != "") {
-	    mainWheelController.Connect(port);
-	}
+    	    odom_loop();
+    	} else if (port != "") {
+    	    mainWheelController.Connect(port);
+    	}
 
-	if (jockeyAndSecWheelController.IsConnected()) {
-	    odom_loop2();
-	} else if (port2 != "") {
-            jockeyAndSecWheelController.Connect(port2);
-	}
+    	if (jockeyAndSecWheelController.IsConnected()) {
+    	    odom_loop2();
+    	} else if (port2 != "") {
+                jockeyAndSecWheelController.Connect(port2);
+    	}
         
         uint32_t nowTime = millis();
 
