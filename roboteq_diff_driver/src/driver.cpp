@@ -728,7 +728,7 @@ int MainNode::run() {
     while (ros::ok()) {
         int status;
 
-        if (port != "") {
+        if ((port != "") && (!mainWheelController.IsConnected())) {
             ROS_INFO_STREAM("Opening serial port on " << port);
             status = mainWheelController.Connect(port);
             if (status == RQ_SUCCESS) {
@@ -738,7 +738,7 @@ int MainNode::run() {
             }
         }
 
-        if (port2 != "") {
+        if ((port2 != "") && (!jockeyAndSecWheelController.IsConnected())) {
             ROS_INFO_STREAM("Opening serial port2 on " << port2);
             status = jockeyAndSecWheelController.Connect(port2);
             if (status == RQ_SUCCESS) {
