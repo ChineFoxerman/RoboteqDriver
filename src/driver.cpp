@@ -587,7 +587,7 @@ int MainNode::run() {
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "main_node");
+    ros::init(argc, argv, "roboteq_node");
 
     MainNode node;
 
