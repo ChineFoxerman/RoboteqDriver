@@ -374,8 +374,8 @@ void MainNode::odom_loop() {
     // read sensor data stream from motor controller
     // Roboteq Tender Wheels
     // CR : encoder counts
-    mainWheelController.GetValue(_CR, 1, odom_encoder_Second);
-    mainWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
+    mainWheelController.GetValue(_CR, 1, odom_encoder_right);
+    mainWheelController.GetValue(_CR, 2, odom_encoder_left);
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("encoder right: " << odom_encoder_right << " left: " << odom_encoder_left);
 #endif

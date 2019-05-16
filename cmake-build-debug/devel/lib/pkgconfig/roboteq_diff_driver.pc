@@ -1,8 +1,0 @@
-prefix=/home/zhangjingwei/catkin_ws/src/roboteq_diff_driver/roboteq_diff_driver/cmake-build-debug/devel
-
-Name: roboteq_diff_driver
-Description: Description of roboteq_diff_driver
-Version: 0.1.0
-Cflags: 
-Libs: -L/home/zhangjingwei/catkin_ws/src/roboteq_diff_driver/roboteq_diff_driver/cmake-build-debug/devel/lib 
-Requires: roscpp roboteq_diff_msgs std_msgs nav_msgs sensor_msgs topic_tools tf serial
