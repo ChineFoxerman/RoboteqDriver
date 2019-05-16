@@ -166,6 +166,20 @@ MainNode::MainNode() :
         current_Second(0.0)
 #endif
 {
+#ifdef _ODOM_SENSORS
+    voltage_msg.data = 0;
+
+    vector<double> vec1 = { 0, 0 };
+    current_msg.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    current_msg.layout.dim[0].size = vec1.size();
+    current_msg.layout.dim[0].stride = 1;
+    current_msg.layout.dim[0].label = "current"; // or whatever name you typically use to index vec1
+    current_msg.data.clear();
+    current_msg.data.insert(current_msg.data.end(), vec1.begin(), vec1.end());
+    energy_msg.data = 0;
+    temperature_msg.data = 0;
+#endif
+
     // CBA Read local params (from launch file)
     nh.getParam("cmdvel_topic", cmdvel_topic);
     ROS_INFO_STREAM("cmdvel_topic: " << cmdvel_topic);
@@ -348,7 +362,7 @@ void MainNode::odom_setup() {
     ROS_INFO("Publishing to topic roboteq/voltage");
     voltage_pub = nh.advertise<std_msgs::Float32>("/roboteq/voltage", 1000);
     ROS_INFO("Publishing to topic roboteq/current");
-    current_pub = nh.advertise<std_msgs::Float32>("/roboteq/current", 1000);
+    current_pub = nh.advertise<std_msgs::Float32MultiArray>("/roboteq/current", 1000);
     ROS_INFO("Publishing to topic roboteq/energy");
     energy_pub = nh.advertise<std_msgs::Float32>("/roboteq/energy", 1000);
     ROS_INFO("Publishing to topic roboteq/temperature");
@@ -460,8 +474,8 @@ void MainNode::odom_hs_run() {
 void MainNode::odom_ms_run() {
 
 #ifdef _ODOM_SENSORS
-    current_msg.data[0] = current_right;
-    current_msg.data[1] = current_left;
+    current_msg.data.at(0) = current_right;
+    current_msg.data.at(1) = current_left;
     current_pub.publish(current_msg);
 #endif
 
@@ -534,7 +548,7 @@ int MainNode::run() {
     	if (jockeyAndSecWheelController.IsConnected()) {
     	    odom_loop2();
     	} else if (port2 != "") {
-                jockeyAndSecWheelController.Connect(port2);
+            jockeyAndSecWheelController.Connect(port2);
     	}
         
         uint32_t nowTime = millis();
