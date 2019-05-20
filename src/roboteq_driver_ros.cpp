@@ -308,6 +308,24 @@ void MainNode::cmdvel_setup() {
     jockeyAndSecWheelController.SetConfig(_ALIM, 1, 90);
     jockeyAndSecWheelController.SetConfig(_ALIM, 2, 90);
 
+    // set max voltage(5 V * 10)
+    mainWheelController.SetConfig(_OVL, 650);
+    jockeyAndSecWheelController.SetConfig(_OVL, 650);
+
+    // set stall Detection
+
+    mainWheelController.SetConfig(_BLSTD, 1, 2);
+    mainWheelController.SetConfig(_BLSTD, 2, 2);
+    jockeyAndSecWheelController.SetConfig(_BLSTD, 1, 2);
+    jockeyAndSecWheelController.SetConfig(_BLSTD, 2, 2);
+
+    // set Default command value
+
+    mainWheelController.SetConfig(_DFC, 1, 0);
+    mainWheelController.SetConfig(_DFC, 2, 0);
+    jockeyAndSecWheelController.SetConfig(_DFC, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_DFC, 2, 0);
+
     // set max speed (rpm) for relative speed commands
     mainWheelController.SetConfig(_MXRPM, 1, 3350);
     mainWheelController.SetConfig(_MXRPM, 2, 3350);
@@ -417,6 +435,12 @@ void MainNode::odom_loop() {
     ROS_DEBUG_STREAM("Current right: " << current_right);
     ROS_DEBUG_STREAM("Current left: " << current_left);
 #endif
+
+    //fault flag
+    int faultFlag;
+    mainWheelController.GetValue(_FF, 1, faultFlag);
+    if (faultFlag != 0)
+        ROS_WARN_STREAM(faultFlag);
 }
 
 void MainNode::odom_loop2() {
