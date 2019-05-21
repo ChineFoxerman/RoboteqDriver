@@ -317,14 +317,14 @@ void MainNode::cmdvel_setup() {
     // set max acceleration rate (200 rpm/s * 10)
     mainWheelController.SetConfig(_MAC, 1, 20000);
     mainWheelController.SetConfig(_MAC, 2, 20000);
-    jockeyAndSecWheelController.SetConfig(_MAC, 1, 20000);
-    jockeyAndSecWheelController.SetConfig(_MAC, 2, 2000);
+    jockeyAndSecWheelController.SetConfig(_MAC, 1, 200000);
+    jockeyAndSecWheelController.SetConfig(_MAC, 2, 20000);
 
     // set max deceleration rate (2000 rpm/s * 10)
     mainWheelController.SetConfig(_MDEC, 1, 20000);
     mainWheelController.SetConfig(_MDEC, 2, 20000);
-    jockeyAndSecWheelController.SetConfig(_MDEC, 1, 20000);
-    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 2000);
+    jockeyAndSecWheelController.SetConfig(_MDEC, 1, 200000);
+    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 20000);
 
     // set PID parameters (gain * 10)
     mainWheelController.SetConfig(_KP, 1, 10);
