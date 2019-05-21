@@ -15,7 +15,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME} src/driver.cpp src/RoboteqDevice.cpp)
+add_executable(${PROJECT_NAME} src/roboteq_driver_ros.cpp src/RoboteqDevice.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME driver PREFIX "")
 

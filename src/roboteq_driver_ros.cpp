@@ -284,6 +284,23 @@ void MainNode::cmdvel_setup() {
     mainWheelController.SetConfig(_RWD, 1000);
     jockeyAndSecWheelController.SetConfig(_RWD, 1000);
 
+    // release emergency stop
+    mainWheelController.SetCommand(_MG, 1);
+    jockeyAndSecWheelController.SetCommand(_MG, 1);
+
+    // set digital inupts action triggers
+    // digital inupts action level
+    mainWheelController.SetConfig(_DINL, 3, 0);
+    mainWheelController.SetConfig(_DINL, 4, 0);
+    jockeyAndSecWheelController.SetConfig(_DINL, 3, 0);
+    jockeyAndSecWheelController.SetConfig(_DINL, 4, 0);
+    // emergency stop
+    mainWheelController.SetConfig(_DINA, 3, (2 + 16 + 32));
+    mainWheelController.SetConfig(_DINA, 4, 0);
+    jockeyAndSecWheelController.SetConfig(_DINA, 3, (2 + 16 + 32));
+    // forward limit switch for secondary train
+    jockeyAndSecWheelController.SetConfig(_DINA, 4, (4 + 16));
+
     // set  Roboteq Tender Wheels motor operating mode (1 for closed-loop speed)
     if (open_loop) {
         mainWheelController.SetConfig(_MMOD, 1, 0);
@@ -307,6 +324,22 @@ void MainNode::cmdvel_setup() {
     mainWheelController.SetConfig(_ALIM, 2, 90);
     jockeyAndSecWheelController.SetConfig(_ALIM, 1, 90);
     jockeyAndSecWheelController.SetConfig(_ALIM, 2, 90);
+
+    // set max voltage(5 V * 10)
+    mainWheelController.SetConfig(_OVL, 650);
+    jockeyAndSecWheelController.SetConfig(_OVL, 650);
+
+    // set stall Detection
+    mainWheelController.SetConfig(_BLSTD, 1, 2);
+    mainWheelController.SetConfig(_BLSTD, 2, 2);
+    jockeyAndSecWheelController.SetConfig(_BLSTD, 1, 2);
+    jockeyAndSecWheelController.SetConfig(_BLSTD, 2, 2);
+
+    // set Default command value
+    mainWheelController.SetConfig(_DFC, 1, 0);
+    mainWheelController.SetConfig(_DFC, 2, 0);
+    jockeyAndSecWheelController.SetConfig(_DFC, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_DFC, 2, 0);
 
     // set max speed (rpm) for relative speed commands
     mainWheelController.SetConfig(_MXRPM, 1, 3350);
@@ -417,6 +450,13 @@ void MainNode::odom_loop() {
     ROS_DEBUG_STREAM("Current right: " << current_right);
     ROS_DEBUG_STREAM("Current left: " << current_left);
 #endif
+
+    //fault flag
+    int faultFlag;
+    mainWheelController.GetValue(_FF, 1, faultFlag);
+    if (faultFlag != 0) {
+        ROS_WARN_STREAM(faultFlag);
+    }
 }
 
 void MainNode::odom_loop2() {
@@ -499,7 +539,7 @@ int MainNode::run() {
     while (ros::ok()) {
         int status;
 
-        if ((port != "") && (!mainWheelController.IsConnected())) {
+        if ((!port.empty()) && (!mainWheelController.IsConnected())) {
             ROS_INFO_STREAM("Opening serial port on " << port);
             status = mainWheelController.Connect(port);
             if (status == RQ_SUCCESS) {
@@ -509,7 +549,7 @@ int MainNode::run() {
             }
         }
 
-        if ((port2 != "") && (!jockeyAndSecWheelController.IsConnected())) {
+        if ((!port2.empty()) && (!jockeyAndSecWheelController.IsConnected())) {
             ROS_INFO_STREAM("Opening serial port2 on " << port2);
             status = jockeyAndSecWheelController.Connect(port2);
             if (status == RQ_SUCCESS) {
@@ -541,13 +581,13 @@ int MainNode::run() {
     while (ros::ok()) {
         if (mainWheelController.IsConnected()) {
     	    odom_loop();
-    	} else if (port != "") {
+    	} else if (!port.empty()) {
     	    mainWheelController.Connect(port);
     	}
 
     	if (jockeyAndSecWheelController.IsConnected()) {
     	    odom_loop2();
-    	} else if (port2 != "") {
+    	} else if (!port2.empty()) {
             jockeyAndSecWheelController.Connect(port2);
     	}
         
@@ -587,7 +627,7 @@ int MainNode::run() {
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "main_node");
+    ros::init(argc, argv, "roboteq_node");
 
     MainNode node;
 
