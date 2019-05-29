@@ -68,7 +68,7 @@ public:
 
     int run();
 
-protected:
+private:
     ros::NodeHandle nh;
 
     RoboteqDevice mainWheelController;
@@ -220,8 +220,8 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     ROS_DEBUG_STREAM("callback of topic : " + cmdvel_sub.getTopic() + " start");
 #endif
     // wheel speed (m/s)
-    float right_speed = (- twist_msg.angular.z + track_width * twist_msg.linear.x / 2.0);
-    float left_speed = (- twist_msg.angular.z - track_width * twist_msg.linear.x / 2.0);
+    float right_speed = (twist_msg.linear.x + track_width * twist_msg.angular.z/ 2.0);
+    float left_speed = -(twist_msg.linear.x - track_width * twist_msg.angular.z / 2.0);
 
     //Jockey and second speed (pwm)
     float Jockey_speed = twist_msg.linear.z;
@@ -243,8 +243,8 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
         mainWheelController.SetCommand(_G, 1, right_power);
         mainWheelController.SetCommand(_G, 2, left_power);
     } else {
-        auto right_rpm = (int32_t) (right_speed / wheel_circumference * 60.0);
-        auto left_rpm = (int32_t) (left_speed / wheel_circumference * 60.0);
+        auto right_rpm = (int32_t) (right_speed * 28 * 60.0/ wheel_circumference );
+        auto left_rpm = (int32_t) (left_speed * 28 * 60.0/ wheel_circumference);
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel rpm right: " << right_rpm << " left: " << left_rpm);
 #endif
@@ -254,7 +254,7 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 // Roboteq J & S
     if (open_loop2) {
         auto Jockey_power = (int32_t) (Jockey_speed * 10);
-        auto Second_power = (int32_t) (Second_speed * 20);
+        auto Second_power = (int32_t) (Second_speed * 10);
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
@@ -559,7 +559,7 @@ int MainNode::run() {
             }
         }
 
-        if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
+        if (mainWheelController.IsConnected() /*&& jockeyAndSecWheelController.IsConnected()*/) {
             break;
         }
 
