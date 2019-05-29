@@ -220,8 +220,8 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     ROS_DEBUG_STREAM("callback of topic : " + cmdvel_sub.getTopic() + " start");
 #endif
     // wheel speed (m/s)
-    float right_speed = (- twist_msg.angular.z + track_width * twist_msg.linear.x / 2.0);
-    float left_speed = (- twist_msg.angular.z - track_width * twist_msg.linear.x / 2.0);
+    float right_speed = (twist_msg.linear.x + track_width * twist_msg.angular.z/ 2.0);
+    float left_speed = -(twist_msg.linear.x - track_width * twist_msg.angular.z / 2.0);
 
     //Jockey and second speed (pwm)
     float Jockey_speed = twist_msg.linear.z;
