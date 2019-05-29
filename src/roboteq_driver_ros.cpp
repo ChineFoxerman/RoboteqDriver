@@ -295,9 +295,9 @@ void MainNode::cmdvel_setup() {
     jockeyAndSecWheelController.SetConfig(_DINL, 3, 0);
     jockeyAndSecWheelController.SetConfig(_DINL, 4, 0);
     // emergency stop
-    mainWheelController.SetConfig(_DINA, 3, (2 + 16 + 32));
+    mainWheelController.SetConfig(_DINA, 3, 0);
     mainWheelController.SetConfig(_DINA, 4, 0);
-    jockeyAndSecWheelController.SetConfig(_DINA, 3, (2 + 16 + 32));
+    jockeyAndSecWheelController.SetConfig(_DINA, 3, 0);
     // forward limit switch for secondary train
     jockeyAndSecWheelController.SetConfig(_DINA, 4, (4 + 16));
 
