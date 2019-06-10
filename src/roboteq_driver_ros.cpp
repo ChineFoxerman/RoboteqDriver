@@ -220,8 +220,8 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     ROS_DEBUG_STREAM("callback of topic : " + cmdvel_sub.getTopic() + " start");
 #endif
     // wheel speed (m/s)
-    float right_speed = (twist_msg.linear.x + track_width * twist_msg.angular.z/ 2.0);
-    float left_speed = -(twist_msg.linear.x - track_width * twist_msg.angular.z / 2.0);
+    float right_speed = (twist_msg.linear.x - track_width * twist_msg.angular.z/ 2.0);
+    float left_speed = -(twist_msg.linear.x + track_width * twist_msg.angular.z / 2.0);
 
     //Jockey and second speed (pwm)
     float Jockey_speed = twist_msg.linear.z;
@@ -253,13 +253,13 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     }
 // Roboteq J & S
     if (open_loop2) {
-        auto Jockey_power = (int32_t) (Jockey_speed * 10);
+        auto Jockey_power = (int32_t) (Jockey_speed * 8 );
         auto Second_power = (int32_t) (Second_speed * 10);
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
         jockeyAndSecWheelController.SetCommand(_G, 1, Second_power);
-        jockeyAndSecWheelController.SetCommand(_G, 2, Jockey_power);
+        jockeyAndSecWheelController.SetCommand(_S, 2, Jockey_power);
     } else {
 
     }
@@ -313,7 +313,7 @@ void MainNode::cmdvel_setup() {
     // set  Roboteq J & S motor operating mode (1 for closed-loop speed)
     if (open_loop2) {
         jockeyAndSecWheelController.SetConfig(_MMOD, 1, 0);
-        jockeyAndSecWheelController.SetConfig(_MMOD, 2, 0);
+        jockeyAndSecWheelController.SetConfig(_MMOD, 2, 1);
     } else {
         jockeyAndSecWheelController.SetConfig(_MMOD, 1, 1);
         jockeyAndSecWheelController.SetConfig(_MMOD, 2, 1);
@@ -323,7 +323,7 @@ void MainNode::cmdvel_setup() {
     mainWheelController.SetConfig(_ALIM, 1, 90);
     mainWheelController.SetConfig(_ALIM, 2, 90);
     jockeyAndSecWheelController.SetConfig(_ALIM, 1, 90);
-    jockeyAndSecWheelController.SetConfig(_ALIM, 2, 90);
+    jockeyAndSecWheelController.SetConfig(_ALIM, 2, 40);
 
     // set max voltage(5 V * 10)
     mainWheelController.SetConfig(_OVL, 650);
@@ -345,19 +345,19 @@ void MainNode::cmdvel_setup() {
     mainWheelController.SetConfig(_MXRPM, 1, 3350);
     mainWheelController.SetConfig(_MXRPM, 2, 3350);
     jockeyAndSecWheelController.SetConfig(_MXRPM, 1, 3350);
-    jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 100);
+    jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 6000);
 
     // set max acceleration rate (200 rpm/s * 10)
     mainWheelController.SetConfig(_MAC, 1, 20000);
     mainWheelController.SetConfig(_MAC, 2, 20000);
     jockeyAndSecWheelController.SetConfig(_MAC, 1, 200000);
-    jockeyAndSecWheelController.SetConfig(_MAC, 2, 20000);
+    jockeyAndSecWheelController.SetConfig(_MAC, 2, 40000);
 
     // set max deceleration rate (2000 rpm/s * 10)
     mainWheelController.SetConfig(_MDEC, 1, 20000);
     mainWheelController.SetConfig(_MDEC, 2, 20000);
     jockeyAndSecWheelController.SetConfig(_MDEC, 1, 200000);
-    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 20000);
+    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 40000);
 
     // set PID parameters (gain * 10)
     mainWheelController.SetConfig(_KP, 1, 10);
@@ -367,9 +367,9 @@ void MainNode::cmdvel_setup() {
     mainWheelController.SetConfig(_KD, 1, 4);
     mainWheelController.SetConfig(_KD, 2, 4);
     jockeyAndSecWheelController.SetConfig(_KP, 1, 10);
-    jockeyAndSecWheelController.SetConfig(_KP, 2, 10);
+    jockeyAndSecWheelController.SetConfig(_KP, 2, 5);
     jockeyAndSecWheelController.SetConfig(_KI, 1, 7);
-    jockeyAndSecWheelController.SetConfig(_KI, 2, 7);
+    jockeyAndSecWheelController.SetConfig(_KI, 2, 3);
     jockeyAndSecWheelController.SetConfig(_KD, 1, 4);
     jockeyAndSecWheelController.SetConfig(_KD, 2, 4);
 
