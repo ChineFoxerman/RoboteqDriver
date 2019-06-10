@@ -188,7 +188,7 @@ void MainNode::main_wheel_controller_setup() {
     // mainWheelController.write("^ECHOF 1\r");
 
     // enable watchdog timer (100 ms)
-    mainWheelController.SetConfig(_RWD, 100);
+    mainWheelController.SetConfig(_RWD, 1000);
 
     // release emergency stop
     mainWheelController.SetCommand(_MG, 1);
@@ -263,7 +263,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
 
     // enable watchdog timer (100 ms)
-    jockeyAndSecWheelController.SetConfig(_RWD, 100);
+    jockeyAndSecWheelController.SetConfig(_RWD, 1000);
 
     // release emergency stop
     jockeyAndSecWheelController.SetCommand(_MG, 1);
