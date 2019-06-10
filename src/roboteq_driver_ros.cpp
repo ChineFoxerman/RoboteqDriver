@@ -492,14 +492,14 @@ void MainNode::odom_loop() {
     mainWheelController.GetValue(_FF, 1, faultFlag1);
     faultFlag1 &= 0x00FF;
     if (faultFlag1 != 0) {
-        ROS_WARN_STREAM("Main wheel 1 fault flags: " + faultFlag1);
+        ROS_WARN_STREAM("Main wheel 1 fault flags: " << faultFlag1);
     }
 
     mainWheelController.GetValue(_FF, 2, faultFlag2);
     faultFlag2 &= 0x00FF;
 
     if (faultFlag2 != 0) {
-        ROS_WARN_STREAM("Main wheel 22 fault flags: " + faultFlag2);
+        ROS_WARN_STREAM("Main wheel 22 fault flags: " << faultFlag2);
     }
 }
 
@@ -554,17 +554,17 @@ void MainNode::odom_loop2() {
     //fault flag
     int faultFlag1 = 0, faultFlag2 = 0;
 
-    mainWheelController.GetValue(_FF, 1, faultFlag1);
+    jockeyAndSecWheelController.GetValue(_FF, 1, faultFlag1);
     faultFlag1 &= 0x00FF;
     if (faultFlag1 != 0) {
-        ROS_WARN_STREAM("Secondary Wheel fault flags: " + faultFlag1);
+        ROS_WARN_STREAM("Secondary Wheel fault flags: " << faultFlag1);
     }
 
-    mainWheelController.GetValue(_FF, 2, faultFlag2);
+    jockeyAndSecWheelController.GetValue(_FF, 2, faultFlag2);
     faultFlag2 &= 0x00FF;
 
     if (faultFlag2 != 0) {
-        ROS_WARN_STREAM("Jockey wheel fault flags: " + faultFlag2);
+        ROS_WARN_STREAM("Jockey wheel fault flags: " << faultFlag2);
     }
 }
 
