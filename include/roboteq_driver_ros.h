@@ -13,10 +13,11 @@ public:
 private:
 
     //
-    // roboteq motors setup
+    // roboteq controllers setup
     //
     void main_wheel_controller_setup();
     void jockey_and_sec_wheel_controller_setup();
+    void controllers_setup();
 
     //
     // cmd_vel subscriber

@@ -48,94 +48,59 @@ int MainNode::run() {
 
     ROS_INFO("Beginning setup...");
 
-    while (ros::ok()) {
-        int status;
-
-        if ((!port.empty()) && (!mainWheelController.IsConnected())) {
-            ROS_INFO_STREAM("Opening serial port on " << port);
-            status = mainWheelController.Connect(port);
-            if (status == RQ_SUCCESS) {
-                ROS_INFO("Successfully connected to main wheels controller");
-                main_wheel_controller_setup();
-            } else {
-                ROS_WARN_STREAM("Failed to connect to main wheels controller");
-            }
-        }
-
-        if ((!port2.empty()) && (!jockeyAndSecWheelController.IsConnected())) {
-            ROS_INFO_STREAM("Opening serial port2 on " << port2);
-            status = jockeyAndSecWheelController.Connect(port2);
-            if (status == RQ_SUCCESS) {
-                ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
-                jockey_and_sec_wheel_controller_setup();
-            } else {
-                ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
-            }
-        }
-
-        if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
-            break;
-        }
-
-        sleep(5);
-    }
-
     cmdvel_setup();
     odom_setup();
+
+    ros::Rate loop_rate(10);
 
     startTime = millis();
     hsTimer = startTime;
     msTimer = startTime;
     lsTimer = startTime;
 
-    ros::Rate loop_rate(10);
-
     ROS_INFO("Beginning looping...");
 
     while (ros::ok()) {
-        if (mainWheelController.IsConnected()) {
+        if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
+            uint32_t nowTime = millis();
+
             odom_loop();
-        } else if (!port.empty()) {
-            mainWheelController.Connect(port);
-            main_wheel_controller_setup();
-        }
-
-        if (jockeyAndSecWheelController.IsConnected()) {
             odom_loop2();
-        } else if (!port2.empty()) {
-            jockeyAndSecWheelController.Connect(port2);
-            jockey_and_sec_wheel_controller_setup();
-        }
 
-        uint32_t nowTime = millis();
+            // Handle 30 Hz publishing
+            if (DELTA(nowTime, hsTimer) >= 33) {
+                hsTimer = nowTime;
+                odom_hs_run();
+            }
 
-        // Handle 30 Hz publishing
-        if (DELTA(nowTime, hsTimer) >= 33) {
-            hsTimer = nowTime;
-            odom_hs_run();
-        }
+            // Handle 10 Hz publishing
+            if (DELTA(nowTime, msTimer) >= 100) {
+                msTimer = nowTime;
+                odom_ms_run();
+            }
 
-        // Handle 10 Hz publishing
-        if (DELTA(nowTime, msTimer) >= 100) {
-            msTimer = nowTime;
-            odom_ms_run();
-        }
+            // Handle 1 Hz publishing
+            if (DELTA(nowTime, lsTimer) >= 1000) {
+                lsTimer = nowTime;
+                odom_ls_run();
+            }
+        } else {
+            ROS_INFO_STREAM("Setting up controllers");
 
-        // Handle 1 Hz publishing
-        if (DELTA(nowTime, lsTimer) >= 1000) {
-            lsTimer = nowTime;
-            odom_ls_run();
+            controllers_setup();
         }
 
         ros::spinOnce();
         loop_rate.sleep();
     }
 
-    if (mainWheelController.IsConnected())
+    if (mainWheelController.IsConnected()) {
         mainWheelController.Disconnect();
+    }
 
-    if (jockeyAndSecWheelController.IsConnected())
+    if (jockeyAndSecWheelController.IsConnected()) {
         jockeyAndSecWheelController.Disconnect();
+    }
 
     ROS_INFO("Exiting");
 
@@ -222,8 +187,8 @@ void MainNode::main_wheel_controller_setup() {
     // disable echo
     // mainWheelController.write("^ECHOF 1\r");
 
-    // enable watchdog timer (1000 ms)
-    mainWheelController.SetConfig(_RWD, 1000);
+    // enable watchdog timer (100 ms)
+    mainWheelController.SetConfig(_RWD, 100);
 
     // release emergency stop
     mainWheelController.SetCommand(_MG, 1);
@@ -265,7 +230,7 @@ void MainNode::main_wheel_controller_setup() {
     mainWheelController.SetConfig(_MXRPM, 1, 3350);
     mainWheelController.SetConfig(_MXRPM, 2, 3350);
 
-    // set max acceleration rate 200 rpm/s
+    // set max acceleration rate 2000 rpm/s
     mainWheelController.SetConfig(_MAC, 1, 20000);
     mainWheelController.SetConfig(_MAC, 2, 20000);
 
@@ -297,8 +262,8 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_S, 1, 0);
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
 
-    // enable watchdog timer (1000 ms)
-    jockeyAndSecWheelController.SetConfig(_RWD, 1000);
+    // enable watchdog timer (100 ms)
+    jockeyAndSecWheelController.SetConfig(_RWD, 100);
 
     // release emergency stop
     jockeyAndSecWheelController.SetCommand(_MG, 1);
@@ -341,7 +306,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetConfig(_MXRPM, 1, 3350);
     jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 6000);
 
-    // set max acceleration rate 2000 rpm/s for secondary wheels and 400 for jockey wheel
+    // set max acceleration rate 20000 rpm/s for secondary wheels and 4000 for jockey wheel
     jockeyAndSecWheelController.SetConfig(_MAC, 1, 200000);
     jockeyAndSecWheelController.SetConfig(_MAC, 2, 40000);
 
@@ -364,6 +329,32 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     // set encoder counts (ppr)
     jockeyAndSecWheelController.SetConfig(_EPPR, 1, encoder_ppr2);
     jockeyAndSecWheelController.SetConfig(_EPPR, 2, encoder_ppr2);
+}
+
+void MainNode::controllers_setup() {
+    int status;
+
+    if ((!port.empty()) && (!mainWheelController.IsConnected())) {
+        ROS_INFO_STREAM("Opening serial port on " << port);
+        status = mainWheelController.Connect(port);
+        if (status == RQ_SUCCESS) {
+            ROS_INFO("Successfully connected to main wheels controller");
+            main_wheel_controller_setup();
+        } else {
+            ROS_WARN_STREAM("Failed to connect to main wheels controller");
+        }
+    }
+
+    if ((!port2.empty()) && (!jockeyAndSecWheelController.IsConnected())) {
+        ROS_INFO_STREAM("Opening serial port2 on " << port2);
+        status = jockeyAndSecWheelController.Connect(port2);
+        if (status == RQ_SUCCESS) {
+            ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
+            jockey_and_sec_wheel_controller_setup();
+        } else {
+            ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
+        }
+    }
 }
 
 //
@@ -492,14 +483,13 @@ void MainNode::odom_loop() {
     mainWheelController.GetValue(_FF, 1, faultFlag1);
     faultFlag1 &= 0x00FF;
     if (faultFlag1 != 0) {
-        ROS_WARN_STREAM("Main wheel 1 fault flags: " << faultFlag1);
+        ROS_WARN_STREAM("Main wheel 1 : " << faultFlag1);
     }
 
     mainWheelController.GetValue(_FF, 2, faultFlag2);
     faultFlag2 &= 0x00FF;
-
     if (faultFlag2 != 0) {
-        ROS_WARN_STREAM("Main wheel 22 fault flags: " << faultFlag2);
+        ROS_WARN_STREAM("Main wheel 2 : " << faultFlag2);
     }
 }
 
@@ -557,14 +547,13 @@ void MainNode::odom_loop2() {
     jockeyAndSecWheelController.GetValue(_FF, 1, faultFlag1);
     faultFlag1 &= 0x00FF;
     if (faultFlag1 != 0) {
-        ROS_WARN_STREAM("Secondary Wheel fault flags: " << faultFlag1);
+        ROS_WARN_STREAM("Secondary Wheel : " << faultFlag1);
     }
 
     jockeyAndSecWheelController.GetValue(_FF, 2, faultFlag2);
     faultFlag2 &= 0x00FF;
-
     if (faultFlag2 != 0) {
-        ROS_WARN_STREAM("Jockey wheel fault flags: " << faultFlag2);
+        ROS_WARN_STREAM("Jockey wheel : " << faultFlag2);
     }
 }
 
