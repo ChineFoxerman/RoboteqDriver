@@ -241,10 +241,10 @@ void MainNode::main_wheel_controller_setup() {
     // set PID parameters
     mainWheelController.SetConfig(_KP, 1, 10);
     mainWheelController.SetConfig(_KP, 2, 10);
-    mainWheelController.SetConfig(_KI, 1, 7);
-    mainWheelController.SetConfig(_KI, 2, 7);
-    mainWheelController.SetConfig(_KD, 1, 4);
-    mainWheelController.SetConfig(_KD, 2, 4);
+    mainWheelController.SetConfig(_KI, 1, 90);
+    mainWheelController.SetConfig(_KI, 2, 85);
+    mainWheelController.SetConfig(_KD, 1, 20);
+    mainWheelController.SetConfig(_KD, 2, 20);
 
     // set encoder mode (encoder 1 for feedback on motor 1, encoder 2 for feedback on motor 2)
     mainWheelController.SetConfig(_EMOD, 1, 18);
@@ -261,6 +261,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_G, 2, 0);
     jockeyAndSecWheelController.SetCommand(_S, 1, 0);
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
+    jockeyAndSecWheelController.SetCommand(_P, 1, -414240);
 
     // enable watchdog timer (100 ms)
     jockeyAndSecWheelController.SetConfig(_RWD, 1000);
@@ -274,13 +275,13 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetConfig(_DINL, 4, 0);
 
     // emergency stop
-    jockeyAndSecWheelController.SetConfig(_DINA, 3, 0);
+    jockeyAndSecWheelController.SetConfig(_DINA, 3, (4 + 16));
     // forward limit switch for secondary train
     jockeyAndSecWheelController.SetConfig(_DINA, 4, (4 + 16));
 
     // set  Roboteq J & S motor operating mode (1 for closed-loop speed)
     if (open_loop2) {
-        jockeyAndSecWheelController.SetConfig(_MMOD, 1, 0);
+        jockeyAndSecWheelController.SetConfig(_MMOD, 1, 3);
         jockeyAndSecWheelController.SetConfig(_MMOD, 2, 1);
     } else {
         jockeyAndSecWheelController.SetConfig(_MMOD, 1, 1);
@@ -289,7 +290,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
 
     // set secondary wheel motor amps limit to 9 A and jockey wheel's to 4 A
     jockeyAndSecWheelController.SetConfig(_ALIM, 1, 90);
-    jockeyAndSecWheelController.SetConfig(_ALIM, 2, 40);
+    jockeyAndSecWheelController.SetConfig(_ALIM, 2, 100);
 
     // set max voltage 65 V
     jockeyAndSecWheelController.SetConfig(_OVL, 650);
@@ -304,23 +305,23 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
 
     // set max speed (rpm) for relative speed commands
     jockeyAndSecWheelController.SetConfig(_MXRPM, 1, 3350);
-    jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 6000);
+    jockeyAndSecWheelController.SetConfig(_MXRPM, 2, 3000);
 
-    // set max acceleration rate 20000 rpm/s for secondary wheels and 4000 for jockey wheel
+    // set max acceleration rate 20000 rpm/s for secondary wheels and 20000 for jockey wheel
     jockeyAndSecWheelController.SetConfig(_MAC, 1, 200000);
-    jockeyAndSecWheelController.SetConfig(_MAC, 2, 40000);
+    jockeyAndSecWheelController.SetConfig(_MAC, 2, 200000);
 
-    // set max deceleration rate 2000 rpm/s for secondary wheels and 400 for jockey wheel
+    // set max deceleration rate 2000 rpm/s for secondary wheels and 20000 for jockey wheel
     jockeyAndSecWheelController.SetConfig(_MDEC, 1, 200000);
-    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 40000);
+    jockeyAndSecWheelController.SetConfig(_MDEC, 2, 200000);
 
     // set PID parameters
-    jockeyAndSecWheelController.SetConfig(_KP, 1, 10);
+    jockeyAndSecWheelController.SetConfig(_KP, 1, 20);
     jockeyAndSecWheelController.SetConfig(_KP, 2, 5);
-    jockeyAndSecWheelController.SetConfig(_KI, 1, 7);
-    jockeyAndSecWheelController.SetConfig(_KI, 2, 3);
-    jockeyAndSecWheelController.SetConfig(_KD, 1, 4);
-    jockeyAndSecWheelController.SetConfig(_KD, 2, 4);
+    jockeyAndSecWheelController.SetConfig(_KI, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_KI, 2, 23);
+    jockeyAndSecWheelController.SetConfig(_KD, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_KD, 2, 20);
 
     // set encoder mode (encoder 1 for feedback on motor 1, encoder 2 for feedback on motor 2)
     jockeyAndSecWheelController.SetConfig(_EMOD, 1, 18);
@@ -400,11 +401,11 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 // Roboteq J & S
     if (open_loop2) {
         auto Jockey_power = (int32_t) (Jockey_speed * 8 );
-        auto Second_power = (int32_t) (Second_speed * 10);
+        auto Second_power = (int32_t) (Second_speed);
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
-        jockeyAndSecWheelController.SetCommand(_G, 1, Second_power);
+        jockeyAndSecWheelController.SetCommand(_P, 1, Second_power);
         jockeyAndSecWheelController.SetCommand(_S, 2, Jockey_power);
     } else {
 
@@ -532,8 +533,8 @@ void MainNode::odom_loop2() {
 
     // BA : motor currents
     int currentSecond, currentJockey;
-    jockeyAndSecWheelController.GetValue(_BA, 1, currentSecond);
-    jockeyAndSecWheelController.GetValue(_BA, 2, currentJockey);
+    jockeyAndSecWheelController.GetValue(_A, 1, currentSecond);
+    jockeyAndSecWheelController.GetValue(_A, 2, currentJockey);
     current_Second = currentSecond / 10.0;
     current_Jockey = currentJockey / 10.0;
 #ifdef _ODOM_DEBUG
