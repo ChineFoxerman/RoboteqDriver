@@ -261,7 +261,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_G, 2, 0);
     jockeyAndSecWheelController.SetCommand(_S, 1, 0);
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
-    jockeyAndSecWheelController.SetCommand(_P, 1, -34520*15);
+    jockeyAndSecWheelController.SetCommand(_P, 1, -34520*12);
 
     // enable watchdog timer (100 ms)
     jockeyAndSecWheelController.SetConfig(_RWD, 1000);
