@@ -261,7 +261,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_G, 2, 0);
     jockeyAndSecWheelController.SetCommand(_S, 1, 0);
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
-    jockeyAndSecWheelController.SetCommand(_P, 1, -414240);
+    jockeyAndSecWheelController.SetCommand(_P, 1, -34520*15);
 
     // enable watchdog timer (100 ms)
     jockeyAndSecWheelController.SetConfig(_RWD, 1000);
@@ -469,8 +469,8 @@ void MainNode::odom_loop() {
 
     // BA : motor currents
     int currentRight, currentLeft;
-    mainWheelController.GetValue(_BA, 1, currentRight);
-    mainWheelController.GetValue(_BA, 2, currentLeft);
+    mainWheelController.GetValue(_A, 1, currentRight);
+    mainWheelController.GetValue(_A, 2, currentLeft);
     current_right = currentRight / 10.0;
     current_left = currentLeft / 10.0;
 #ifdef _ODOM_DEBUG
@@ -511,7 +511,6 @@ void MainNode::odom_loop2() {
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
 #endif
-
     // P : PWM
     int pwmSecond, pwmJockey;
     jockeyAndSecWheelController.GetValue(_P, 1, pwmSecond);
@@ -541,6 +540,12 @@ void MainNode::odom_loop2() {
     ROS_DEBUG_STREAM("Current Second: " << current_Second);
     ROS_DEBUG_STREAM("Current Jockey: " << current_Jockey);
 #endif
+
+    int input3=0;
+    jockeyAndSecWheelController.GetValue(_DIN, 3, input3);
+    if(input3==1){
+        jockeyAndSecWheelController.SetCommand(_C, 1, 0);
+}
 
     //fault flag
     int faultFlag1 = 0, faultFlag2 = 0;
