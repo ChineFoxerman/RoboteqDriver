@@ -26,6 +26,7 @@
 
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Int32.h>
 
 #endif
 
@@ -49,6 +50,8 @@ int MainNode::run() {
     ROS_INFO("Beginning setup...");
 
     cmdvel_setup();
+    cmd_ts_setup();
+    cmd_jw_setup();
     odom_setup();
 
     ros::Rate loop_rate(10);
@@ -59,6 +62,8 @@ int MainNode::run() {
     lsTimer = startTime;
 
     ROS_INFO("Beginning looping...");
+    
+    volt_low_count=0;
 
     while (ros::ok()) {
         if (mainWheelController.IsConnected() && jockeyAndSecWheelController.IsConnected()) {
@@ -86,7 +91,6 @@ int MainNode::run() {
             }
         } else {
             ROS_INFO_STREAM("Setting up controllers");
-
             controllers_setup();
         }
 
@@ -149,6 +153,10 @@ MainNode::MainNode() :
     // CBA Read local params (from launch file)
     nh.getParam("cmdvel_topic", cmdvel_topic);
     ROS_INFO_STREAM("cmdvel_topic: " << cmdvel_topic);
+    nh.getParam("cmd_jw_topic", cmd_jw_topic);
+    ROS_INFO_STREAM("cmd_jw_topic: " << cmd_jw_topic);
+    nh.getParam("cmd_ts_topic", cmd_ts_topic);
+    ROS_INFO_STREAM("cmd_ts_topic: " << cmd_ts_topic);
     nh.getParam("port", port);
     ROS_INFO_STREAM("port: " << port);
     nh.getParam("open_loop", open_loop);
@@ -261,7 +269,6 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetCommand(_G, 2, 0);
     jockeyAndSecWheelController.SetCommand(_S, 1, 0);
     jockeyAndSecWheelController.SetCommand(_S, 2, 0);
-    jockeyAndSecWheelController.SetCommand(_P, 1, -34520*12);
 
     // enable watchdog timer (100 ms)
     jockeyAndSecWheelController.SetConfig(_RWD, 1000);
@@ -289,7 +296,7 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     }
 
     // set secondary wheel motor amps limit to 9 A and jockey wheel's to 4 A
-    jockeyAndSecWheelController.SetConfig(_ALIM, 1, 90);
+    jockeyAndSecWheelController.SetConfig(_ALIM, 1, 200);
     jockeyAndSecWheelController.SetConfig(_ALIM, 2, 100);
 
     // set max voltage 65 V
@@ -316,11 +323,11 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetConfig(_MDEC, 2, 200000);
 
     // set PID parameters
-    jockeyAndSecWheelController.SetConfig(_KP, 1, 20);
+    jockeyAndSecWheelController.SetConfig(_KP, 1, 12);
     jockeyAndSecWheelController.SetConfig(_KP, 2, 5);
-    jockeyAndSecWheelController.SetConfig(_KI, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_KI, 1, 20);
     jockeyAndSecWheelController.SetConfig(_KI, 2, 23);
-    jockeyAndSecWheelController.SetConfig(_KD, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_KD, 1, 10);
     jockeyAndSecWheelController.SetConfig(_KD, 2, 20);
 
     // set encoder mode (encoder 1 for feedback on motor 1, encoder 2 for feedback on motor 2)
@@ -330,6 +337,15 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     // set encoder counts (ppr)
     jockeyAndSecWheelController.SetConfig(_EPPR, 1, encoder_ppr2);
     jockeyAndSecWheelController.SetConfig(_EPPR, 2, encoder_ppr2);
+
+    int pin3 = 0;
+    jockeyAndSecWheelController.GetValue(_DIN, 3, pin3);
+    do{
+        jockeyAndSecWheelController.SetCommand(_PR, 1, 28000);
+        jockeyAndSecWheelController.GetValue(_DIN, 3, pin3);
+    }while(pin3!=1);
+     
+
 }
 
 void MainNode::controllers_setup() {
@@ -405,16 +421,36 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 #ifdef _CMDVEL_DEBUG
         ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
 #endif
-        jockeyAndSecWheelController.SetCommand(_P, 1, Second_power);
-        jockeyAndSecWheelController.SetCommand(_S, 2, Jockey_power);
     } else {
 
     }
 }
 
+
+void MainNode::cmd_jw_callback(const std_msgs::Int32::ConstPtr& msg) {
+    int32_t ts_position;
+    ts_position = msg->data;
+    jockeyAndSecWheelController.SetCommand(_P, 1, ts_position);
+}
+
+void MainNode::cmd_ts_callback(const std_msgs::Int32::ConstPtr& msg) {
+    int32_t jw_speed = msg->data;
+    jockeyAndSecWheelController.SetCommand(_S, 2, jw_speed);
+}
+
 void MainNode::cmdvel_setup() {
-    ROS_INFO_STREAM("Subscribing to topic " << cmdvel_topic);
-    cmdvel_sub = nh.subscribe(cmdvel_topic, 1000, &MainNode::cmdvel_callback, this);
+    ROS_INFO_STREAM("Subscribing to cmdvel topic " << cmdvel_topic);
+    cmdvel_sub = nh.subscribe(cmdvel_topic, 10, &MainNode::cmdvel_callback, this);
+}
+
+void MainNode::cmd_jw_setup() {
+    ROS_INFO_STREAM("Subscribing to jockey wheel topic " << cmd_jw_topic);
+    cmd_jw_sub = nh.subscribe(cmd_jw_topic, 10, &MainNode::cmd_jw_callback, this);
+}
+
+void MainNode::cmd_ts_setup() {
+    ROS_INFO_STREAM("Subscribing to second train topic " << cmd_ts_topic);
+    cmd_ts_sub = nh.subscribe(cmd_ts_topic, 10, &MainNode::cmd_ts_callback, this);
 }
 
 void MainNode::odom_setup() {
@@ -447,6 +483,18 @@ void MainNode::odom_loop() {
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("V: " << voltage);
 #endif
+    
+    if(volt<=300){
+        volt_low_count++;
+    }else{
+
+        volt_low_count=0;
+    }
+
+    if(volt_low_count>=10){
+        mainWheelController.Disconnect();
+        jockeyAndSecWheelController.Disconnect();
+    }
 
     // P : PWM
     int pwmRight, pwmLeft;
@@ -511,6 +559,18 @@ void MainNode::odom_loop2() {
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
 #endif
+
+    if(volt<=300){
+        volt_low_count++;
+    }else{
+        volt_low_count=0;
+    }
+
+    if(volt_low_count>=10){
+        mainWheelController.Disconnect();
+        jockeyAndSecWheelController.Disconnect();
+    }
+
     // P : PWM
     int pwmSecond, pwmJockey;
     jockeyAndSecWheelController.GetValue(_P, 1, pwmSecond);

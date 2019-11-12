@@ -23,7 +23,11 @@ private:
     // cmd_vel subscriber
     //
     void cmdvel_callback(const geometry_msgs::Twist &twist_msg);
+    void cmd_jw_callback(const std_msgs::Int32::ConstPtr& msg);
+    void cmd_ts_callback(const std_msgs::Int32::ConstPtr& msg);
     void cmdvel_setup();
+    void cmd_jw_setup();
+    void cmd_ts_setup();
 
     //
     // odom publisher
@@ -49,6 +53,8 @@ private:
     // cmd_vel subscriber
     //
     ros::Subscriber cmdvel_sub;
+    ros::Subscriber cmd_ts_sub;
+    ros::Subscriber cmd_jw_sub;
 
 #ifdef _ODOM_SENSORS
     std_msgs::Float32 voltage_msg;
@@ -91,6 +97,8 @@ private:
 
     // General settings
     std::string cmdvel_topic;
+    std::string cmd_jw_topic;
+    std::string cmd_ts_topic;
 
     // settings  Roboteq Tender Wheels
     std::string port;
@@ -105,4 +113,6 @@ private:
     bool open_loop2;
     int encoder_ppr2;
     int encoder_cpr2;
+
+    int volt_low_count;
 };
