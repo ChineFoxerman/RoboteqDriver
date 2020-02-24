@@ -27,6 +27,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/UInt8.h>
 
 #endif
 
@@ -71,27 +72,32 @@ int MainNode::run() {
 
             odom_loop();
             odom_loop2();
-
-            // Handle 30 Hz publishing
-            if (DELTA(nowTime, hsTimer) >= 33) {
-                hsTimer = nowTime;
-                odom_hs_run();
+            //30hz publish
+            if (DELTA(nowTime, hsTimer) >=33){
+               hsTimer = nowTime;
+               odom_hs_run();
             }
-
-            // Handle 10 Hz publishing
-            if (DELTA(nowTime, msTimer) >= 100) {
-                msTimer = nowTime;
-                odom_ms_run();
+            //10hz publish
+            if (DELTA(nowTime, msTimer) >=100){
+               msTimer = nowTime;
+               odom_ms_run();
             }
-
-            // Handle 1 Hz publishing
-            if (DELTA(nowTime, lsTimer) >= 1000) {
-                lsTimer = nowTime;
-                odom_ls_run();
+            //1hz publish
+            if (DELTA(nowTime, lsTimer) >=1000){
+               lsTimer = nowTime;
+               odom_ls_run();
             }
+            //Publish input 3 and 4
+            jockeyAndSecWheelController.GetValue(_DIN,3,input3);
+            jockeyAndSecWheelController.GetValue(_DIN,4,input4);
+            input3_msg.data = input3;
+            input4_msg.data = input4;
+            input3_pub.publish(input3_msg);
+            input4_pub.publish(input4_msg);
         } else {
             ROS_INFO_STREAM("Setting up controllers");
             controllers_setup();
+            ROS_INFO_STREAM("Setting up Done");
         }
 
         ros::spinOnce();
@@ -132,6 +138,8 @@ MainNode::MainNode() :
         PWM_Second(0.0),
         RPM_Jockey(0),
         RPM_Second(0),
+        input3(0),
+        input4(0),
         current_Jockey(0.0),
         current_Second(0.0)
 #endif
@@ -139,13 +147,22 @@ MainNode::MainNode() :
 #ifdef _ODOM_SENSORS
     voltage_msg.data = 0;
 
-    vector<double> vec1 = { 0, 0 };
+    vector<double> vec1 = { 0, 0, 0, 0 };
     current_msg.layout.dim.push_back(std_msgs::MultiArrayDimension());
     current_msg.layout.dim[0].size = vec1.size();
     current_msg.layout.dim[0].stride = 1;
     current_msg.layout.dim[0].label = "current"; // or whatever name you typically use to index vec1
     current_msg.data.clear();
     current_msg.data.insert(current_msg.data.end(), vec1.begin(), vec1.end());
+    
+    vector<double> vec2 = { 0, 0, 0, 0 };
+    RPM_msg.layout.dim.push_back(std_msgs::MultiArrayDimension());
+    RPM_msg.layout.dim[0].size = vec2.size();
+    RPM_msg.layout.dim[0].stride = 1;
+    RPM_msg.layout.dim[0].label = "RPM";
+    RPM_msg.data.clear();
+    RPM_msg.data.insert(RPM_msg.data.end(),vec2.begin(), vec2.end());
+
     energy_msg.data = 0;
     temperature_msg.data = 0;
 #endif
@@ -282,9 +299,9 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetConfig(_DINL, 4, 0);
 
     // emergency stop
-    jockeyAndSecWheelController.SetConfig(_DINA, 3, (4 + 16));
+    jockeyAndSecWheelController.SetConfig(_DINA, 3, (4+16));
     // forward limit switch for secondary train
-    jockeyAndSecWheelController.SetConfig(_DINA, 4, (4 + 16));
+    jockeyAndSecWheelController.SetConfig(_DINA, 4, (4+32));
 
     // set  Roboteq J & S motor operating mode (1 for closed-loop speed)
     if (open_loop2) {
@@ -350,26 +367,36 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
 
 void MainNode::controllers_setup() {
     int status;
-
+    int v = 0;
     if ((!port.empty()) && (!mainWheelController.IsConnected())) {
-        ROS_INFO_STREAM("Opening serial port on " << port);
+        //ROS_INFO_STREAM("Opening serial port on " << port);
         status = mainWheelController.Connect(port);
         if (status == RQ_SUCCESS) {
-            ROS_INFO("Successfully connected to main wheels controller");
-            main_wheel_controller_setup();
+            mainWheelController.GetValue(_V, 2, v);
+            if (v > 300){
+                ROS_INFO("Successfully connected to main wheels controller");
+                main_wheel_controller_setup();
+                ROS_INFO_STREAM("3321");}
+            else {
+                ROS_INFO_STREAM("1123"); 
+                mainWheelController.Disconnect();}
         } else {
-            ROS_WARN_STREAM("Failed to connect to main wheels controller");
+            //ROS_WARN_STREAM("Failed to connect to main wheels controller");
         }
     }
 
     if ((!port2.empty()) && (!jockeyAndSecWheelController.IsConnected())) {
-        ROS_INFO_STREAM("Opening serial port2 on " << port2);
+        //ROS_INFO_STREAM("Opening serial port2 on " << port2);
         status = jockeyAndSecWheelController.Connect(port2);
         if (status == RQ_SUCCESS) {
-            ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
-            jockey_and_sec_wheel_controller_setup();
+            jockeyAndSecWheelController.GetValue(_V, 2, v);
+            if (v > 300){
+                ROS_INFO("Successfully connected to jockey wheel and secondary wheel controller");
+                jockey_and_sec_wheel_controller_setup();}
+            else {
+                jockeyAndSecWheelController.Disconnect();}
         } else {
-            ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
+            //ROS_WARN_STREAM("Failed to connect to jockey wheel and secondary wheel controller");
         }
     }
 }
@@ -385,15 +412,6 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
     // wheel speed (m/s)
     float right_speed = (twist_msg.linear.x - track_width * twist_msg.angular.z/ 2.0);
     float left_speed = -(twist_msg.linear.x + track_width * twist_msg.angular.z / 2.0);
-
-    //Jockey and second speed (pwm)
-    float Jockey_speed = twist_msg.linear.z;
-    float Second_speed = twist_msg.angular.y;
-
-#ifdef _CMDVEL_DEBUG
-    ROS_DEBUG_STREAM("cmdvel speed right: " << right_speed << " left: " << left_speed);
-    ROS_DEBUG_STREAM("cmdvel speed Jockey: " << Jockey_speed << " Second: " << Second_speed);
-#endif
 
     // Roboteq Tender Wheels
     if (open_loop) {
@@ -414,26 +432,17 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
         mainWheelController.SetCommand(_S, 1, right_rpm);
         mainWheelController.SetCommand(_S, 2, left_rpm);
     }
-// Roboteq J & S
-    if (open_loop2) {
-        auto Jockey_power = (int32_t) (Jockey_speed * 8 );
-        auto Second_power = (int32_t) (Second_speed);
-#ifdef _CMDVEL_DEBUG
-        ROS_DEBUG_STREAM("cmdvel power Jockey: " << Jockey_power << " Second: " << Second_power);
-#endif
-    } else {
 
-    }
 }
 
 
-void MainNode::cmd_jw_callback(const std_msgs::Int32::ConstPtr& msg) {
+void MainNode::cmd_ts_callback(const std_msgs::Int32::ConstPtr& msg) {
     int32_t ts_position;
     ts_position = msg->data;
     jockeyAndSecWheelController.SetCommand(_P, 1, ts_position);
 }
 
-void MainNode::cmd_ts_callback(const std_msgs::Int32::ConstPtr& msg) {
+void MainNode::cmd_jw_callback(const std_msgs::Int32::ConstPtr& msg) {
     int32_t jw_speed = msg->data;
     jockeyAndSecWheelController.SetCommand(_S, 2, jw_speed);
 }
@@ -459,10 +468,16 @@ void MainNode::odom_setup() {
     voltage_pub = nh.advertise<std_msgs::Float32>("/roboteq/voltage", 1000);
     ROS_INFO("Publishing to topic roboteq/current");
     current_pub = nh.advertise<std_msgs::Float32MultiArray>("/roboteq/current", 1000);
+    ROS_INFO("Publishing to topic roboteq/RPM");
+    RPM_pub = nh.advertise<std_msgs::Float32MultiArray>("/roboteq/RPM",1000);
     ROS_INFO("Publishing to topic roboteq/energy");
     energy_pub = nh.advertise<std_msgs::Float32>("/roboteq/energy", 1000);
     ROS_INFO("Publishing to topic roboteq/temperature");
     temperature_pub = nh.advertise<std_msgs::Float32>("/roboteq/temperature", 1000);
+    ROS_INFO("Publishing to topic roboteq/input3");
+    input3_pub = nh.advertise<std_msgs::UInt8>("/roboteq/input3", 1000);
+    ROS_INFO("Publishing to topic roboteq/input4");
+    input4_pub = nh.advertise<std_msgs::UInt8>("/roboteq/input4", 1000);
 #endif
 }
 
@@ -478,7 +493,7 @@ void MainNode::odom_loop() {
 
     // V : voltage
     int volt;
-    mainWheelController.GetValue(_V, 1, volt);
+    mainWheelController.GetValue(_V, 2, volt);
     voltage = volt / 10.0;
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("V: " << voltage);
@@ -554,7 +569,7 @@ void MainNode::odom_loop2() {
 
     // V : voltage
     int volt;
-    jockeyAndSecWheelController.GetValue(_V, 1, volt);
+    jockeyAndSecWheelController.GetValue(_V, 2, volt);
     jockeyAndSecWheelVoltage = volt / 10.0;
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("V2: " << jockeyAndSecWheelVoltage);
@@ -631,7 +646,14 @@ void MainNode::odom_ms_run() {
 #ifdef _ODOM_SENSORS
     current_msg.data.at(0) = current_right;
     current_msg.data.at(1) = current_left;
+    current_msg.data.at(2) = current_Second;
+    current_msg.data.at(3) = current_Jockey;
     current_pub.publish(current_msg);
+    RPM_msg.data.at(0) = float(RPM_right);
+    RPM_msg.data.at(1) = float(RPM_left);
+    RPM_msg.data.at(2) = float(RPM_Second);
+    RPM_msg.data.at(3) = float(RPM_Jockey);
+    RPM_pub.publish(RPM_msg);
 #endif
 
 }

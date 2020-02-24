@@ -61,10 +61,16 @@ private:
     ros::Publisher voltage_pub;
     std_msgs::Float32MultiArray current_msg;
     ros::Publisher current_pub;
+    std_msgs::Float32MultiArray RPM_msg;
+    ros::Publisher RPM_pub;
     std_msgs::Float32 energy_msg;
     ros::Publisher energy_pub;
     std_msgs::Float32 temperature_msg;
     ros::Publisher temperature_pub;
+    std_msgs::UInt8 input3_msg;
+    ros::Publisher input3_pub;
+    std_msgs::UInt8 input4_msg;
+    ros::Publisher input4_pub;
 #endif
 
     // toss out initial encoder readings
@@ -84,6 +90,8 @@ private:
     float current_left;
     float energy;
     float temperature;
+    int input3;
+    int input4;
 
     // Roboteq J & S (Roue jockey + secondaire)
     float jockeyAndSecWheelVoltage;
