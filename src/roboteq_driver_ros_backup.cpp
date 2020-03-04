@@ -174,12 +174,6 @@ MainNode::MainNode() :
     ROS_INFO_STREAM("cmd_jw_topic: " << cmd_jw_topic);
     nh.getParam("cmd_ts_topic", cmd_ts_topic);
     ROS_INFO_STREAM("cmd_ts_topic: " << cmd_ts_topic);
-    nh.getParam("mode_motor_topic: ", mode_motor_topic);
-    ROS_INFO_STREAM("mode_motor_topic: " << mode_motor_topic);
-    nh.getParam("mode_ts_topic: ", mode_ts_topic);
-    ROS_INFO_STREAM("mode_ts_topic: " << mode_ts_topic);
-    nh.getParam("mode_jw_topic", mode_jw_topic);
-    ROS_INFO_STREAM("mode_jw_topic << mode_jw_topic");
     nh.getParam("port", port);
     ROS_INFO_STREAM("port: " << port);
     nh.getParam("open_loop", open_loop);
@@ -246,8 +240,8 @@ void MainNode::main_wheel_controller_setup() {
     mainWheelController.SetConfig(_ALIM, 1, 90);
     mainWheelController.SetConfig(_ALIM, 2, 90);
 
-    // set max voltage 55 V
-    mainWheelController.SetConfig(_OVL, 550);
+    // set max voltage 65 V
+    mainWheelController.SetConfig(_OVL, 530);
     mainWheelController.SetConfig(_OVH, 20);
 
     // set stall Detection
@@ -348,14 +342,11 @@ void MainNode::jockey_and_sec_wheel_controller_setup() {
     jockeyAndSecWheelController.SetConfig(_MDEC, 2, 200000);
 
     // set PID parameters
-    //jockeyAndSecWheelController.SetConfig(_KP, 1, 12);
-    jockeyAndSecWheelController.SetConfig(_KP, 1, 20);
+    jockeyAndSecWheelController.SetConfig(_KP, 1, 12);
     jockeyAndSecWheelController.SetConfig(_KP, 2, 5);
-    //jockeyAndSecWheelController.SetConfig(_KI, 1, 20);
-    jockeyAndSecWheelController.SetConfig(_KI, 1, 10);
+    jockeyAndSecWheelController.SetConfig(_KI, 1, 20);
     jockeyAndSecWheelController.SetConfig(_KI, 2, 23);
-    //jockeyAndSecWheelController.SetConfig(_KD, 1, 10);
-    jockeyAndSecWheelController.SetConfig(_KD, 1, 0);
+    jockeyAndSecWheelController.SetConfig(_KD, 1, 10);
     jockeyAndSecWheelController.SetConfig(_KD, 2, 20);
 
     // set encoder mode (encoder 1 for feedback on motor 1, encoder 2 for feedback on motor 2)
@@ -448,114 +439,27 @@ void MainNode::cmdvel_callback(const geometry_msgs::Twist &twist_msg) {
 void MainNode::cmd_ts_callback(const std_msgs::Int32::ConstPtr& msg) {
     int32_t ts_position;
     ts_position = msg->data;
-    if(ts_mode==3){
-      jockeyAndSecWheelController.SetCommand(_P, 1, ts_position);}
+    jockeyAndSecWheelController.SetCommand(_P, 1, ts_position);
 }
 
 void MainNode::cmd_jw_callback(const std_msgs::Int32::ConstPtr& msg) {
-    int32_t jw_command = msg->data;
-    if(jw_mode==1){
-      jockeyAndSecWheelController.SetCommand(_S, 2, jw_command);}
-    if(jw_mode==3){
-      jockeyAndSecWheelController.SetCommand(_P, 2, jw_command);}
+    int32_t jw_speed = msg->data;
+    jockeyAndSecWheelController.SetCommand(_S, 2, jw_speed);
 }
 
 void MainNode::cmdvel_setup() {
     ROS_INFO_STREAM("Subscribing to cmdvel topic " << cmdvel_topic);
     cmdvel_sub = nh.subscribe(cmdvel_topic, 10, &MainNode::cmdvel_callback, this);
-    mode_motor_sub = nh.subscribe(mode_motor_topic, 10, &MainNode::mode_motor_callback, this);
 }
 
 void MainNode::cmd_jw_setup() {
     ROS_INFO_STREAM("Subscribing to jockey wheel topic " << cmd_jw_topic);
     cmd_jw_sub = nh.subscribe(cmd_jw_topic, 10, &MainNode::cmd_jw_callback, this);
-    mode_jw_sub = nh.subscribe(mode_jw_topic, 10, &MainNode::mode_jw_callback, this);
 }
 
 void MainNode::cmd_ts_setup() {
     ROS_INFO_STREAM("Subscribing to second train topic " << cmd_ts_topic);
     cmd_ts_sub = nh.subscribe(cmd_ts_topic, 10, &MainNode::cmd_ts_callback, this);
-    mode_ts_sub = nh.subscribe(mode_ts_topic, 10, &MainNode::mode_ts_callback, this);
-}
-
-
-void MainNode::mode_jw_callback(const std_msgs::UInt8::ConstPtr& msg) {
-    jw_mode = msg->data; 
-    switch(jw_mode){
-     //open loop 
-     case 0:
-        jockeyAndSecWheelController.SetConfig(_MMOD, 2, 0);
-        break;
-     
-     //closed-loop speed 
-     case 1:
-        jockeyAndSecWheelController.SetConfig(_MMOD, 2, 1);
-        jockeyAndSecWheelController.SetConfig(_KP, 2, 5);
-        jockeyAndSecWheelController.SetConfig(_KI, 2, 23);
-        jockeyAndSecWheelController.SetConfig(_KD, 2, 20);
-        break;
-    
-     //closed-loop position 
-     case 3:
-        jockeyAndSecWheelController.SetConfig(_MMOD, 2, 3);
-        jockeyAndSecWheelController.SetConfig(_KP, 2, 7);
-        jockeyAndSecWheelController.SetConfig(_KI, 2, 1);
-        jockeyAndSecWheelController.SetConfig(_KD, 2, 0);
-        break;
-     
-     //closed-loop torque       
-     case 5:
-        break;
-     
-     default:
-        break;
-    }
-
-}
-
-void MainNode::mode_ts_callback(const std_msgs::UInt8::ConstPtr& msg) {
-    ts_mode = msg->data;
-    switch(ts_mode){
-      //open loop
-      case 0:
-         jockeyAndSecWheelController.SetConfig(_MMOD, 1, 0);
-         break;
-
-      case 3:
-         jockeyAndSecWheelController.SetConfig(_MMOD, 1, 3);
-         jockeyAndSecWheelController.SetConfig(_KP, 1, 20);
-         jockeyAndSecWheelController.SetConfig(_KI, 1, 10);
-         jockeyAndSecWheelController.SetConfig(_KD, 1, 0);
-         break;
-
-      default:
-         break;
-    }
-}
-
-void MainNode::mode_motor_callback(const std_msgs::UInt8::ConstPtr& msg) {
-    motor_mode = msg->data;
-    switch(motor_mode){
-      //open loop
-      case 0:
-         mainWheelController.SetConfig(_MMOD, 1, 0);
-         mainWheelController.SetConfig(_MMOD, 2, 0);
-         break;
-
-      case 1:
-         mainWheelController.SetConfig(_MMOD, 1, 1);
-         mainWheelController.SetConfig(_MMOD, 2, 1);
-         mainWheelController.SetConfig(_KP, 1, 10);
-         mainWheelController.SetConfig(_KP, 2, 10);
-         mainWheelController.SetConfig(_KI, 1, 90);
-         mainWheelController.SetConfig(_KI, 2, 85);
-         mainWheelController.SetConfig(_KD, 1, 20);
-         mainWheelController.SetConfig(_KD, 2, 20);
-         break;
-
-      default:
-         break;
-    }
 }
 
 void MainNode::odom_setup() {
@@ -574,8 +478,6 @@ void MainNode::odom_setup() {
     input3_pub = nh.advertise<std_msgs::UInt8>("/roboteq/input3", 1000);
     ROS_INFO("Publishing to topic roboteq/input4");
     input4_pub = nh.advertise<std_msgs::UInt8>("/roboteq/input4", 1000);
-    encoder_jw_pub = nh.advertise<std_msgs::Int32>("/roboteq/encoder_jw", 1000);
-    encoder_ts_pub = nh.advertise<std_msgs::Int32>("/roboteq/encoder_ts", 1000);   
 #endif
 }
 
@@ -661,8 +563,6 @@ void MainNode::odom_loop2() {
     // CR : encoder counts
     jockeyAndSecWheelController.GetValue(_CR, 1, odom_encoder_Second);
     jockeyAndSecWheelController.GetValue(_CR, 2, odom_encoder_Jockey);
-    encoder_jw_pub.publish(odom_encoder_Jockey);
-    encoder_ts_pub.publish(odom_encoder_Second);
 #ifdef _ODOM_DEBUG
     ROS_DEBUG_STREAM("encoder Jockey: " << odom_encoder_Jockey << " Second: " << odom_encoder_Second);
 #endif
@@ -719,13 +619,8 @@ void MainNode::odom_loop2() {
     int input3=0;
     jockeyAndSecWheelController.GetValue(_DIN, 3, input3);
     if(input3==1){
-      jockeyAndSecWheelController.SetCommand(_C, 1, 0);
-    }
-    input4 = 0;
-    jockeyAndSecWheelController.GetValue(_DIN, 4, input4);
-    if(input4==1){
-      jockeyAndSecWheelController.SetCommand(_C, 2, 0);  
-    }
+        jockeyAndSecWheelController.SetCommand(_C, 1, 0);
+}
 
     //fault flag
     int faultFlag1 = 0, faultFlag2 = 0;

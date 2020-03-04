@@ -30,6 +30,15 @@ private:
     void cmd_ts_setup();
 
     //
+    //mode change subscriber
+    //   
+    void mode_jw_callback(const std_msgs::UInt8::ConstPtr& msg);   
+    uint8_t jw_mode; 
+    void mode_ts_callback(const std_msgs::UInt8::ConstPtr& msg);
+    uint8_t ts_mode; 
+    void mode_motor_callback(const std_msgs::UInt8::ConstPtr& msg);
+    uint8_t motor_mode;
+    //
     // odom publisher
     //
     void odom_setup();
@@ -55,6 +64,13 @@ private:
     ros::Subscriber cmdvel_sub;
     ros::Subscriber cmd_ts_sub;
     ros::Subscriber cmd_jw_sub;
+    
+    //
+    // motor mode subscriber
+    //
+    ros::Subscriber mode_ts_sub;
+    ros::Subscriber mode_jw_sub;
+    ros::Subscriber mode_motor_sub;
 
 #ifdef _ODOM_SENSORS
     std_msgs::Float32 voltage_msg;
@@ -71,6 +87,8 @@ private:
     ros::Publisher input3_pub;
     std_msgs::UInt8 input4_msg;
     ros::Publisher input4_pub;
+    ros::Publisher encoder_ts_pub;
+    ros::Publisher encoder_jw_pub;
 #endif
 
     // toss out initial encoder readings
@@ -107,6 +125,9 @@ private:
     std::string cmdvel_topic;
     std::string cmd_jw_topic;
     std::string cmd_ts_topic;
+    std::string mode_jw_topic;
+    std::string mode_ts_topic;
+    std::string mode_motor_topic;
 
     // settings  Roboteq Tender Wheels
     std::string port;
